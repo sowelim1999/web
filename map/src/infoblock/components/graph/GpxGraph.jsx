@@ -24,6 +24,7 @@ import clsx from 'clsx';
 import { getRelativePosition } from 'chart.js/helpers';
 import RoadAttributesGraph from './RoadAttributesGraph';
 import { cap, UNDEFINED_DATA } from '../../../manager/GraphManager';
+import ChartMemo from "./ChartMemo";
 
 const mouseLine = {
     id: 'mouseLine',
@@ -508,7 +509,7 @@ export default function GpxGraph({
                 },
             },
         }),
-        [data, ctx.trackRange]
+        [data]
     );
 
     const graphData = {
@@ -589,7 +590,7 @@ export default function GpxGraph({
         ctx.mapMarkerListener(null);
         setSelectedPoint(null);
     }
-
+    console.log(true)
     return (
         <>
             <Box sx={{ p: 0, width: Number(width.replace('px', '')) - 42, height: 180 }}>
@@ -616,26 +617,26 @@ export default function GpxGraph({
                 max={data.length - 1}
                 components={{ Thumb: ThumbComponent }}
             />
-            {attrGraphData?.types && (
-                <RoadAttributesGraph
-                    name={'Road type'}
-                    data={attrGraphData.types}
-                    width={width}
-                    selectedPoint={selectedPoint}
-                    activeIndex={activeIndex}
-                    setActiveIndex={setActiveIndex}
-                />
-            )}
-            {attrGraphData?.surfaces && (
-                <RoadAttributesGraph
-                    name={'Surface'}
-                    data={attrGraphData.surfaces}
-                    width={width}
-                    selectedPoint={selectedPoint}
-                    activeIndex={activeIndex}
-                    setActiveIndex={setActiveIndex}
-                />
-            )}
+            {/*{attrGraphData?.types && (*/}
+            {/*    <RoadAttributesGraph*/}
+            {/*        name={'Road type'}*/}
+            {/*        data={attrGraphData.types}*/}
+            {/*        width={width}*/}
+            {/*        selectedPoint={selectedPoint}*/}
+            {/*        activeIndex={activeIndex}*/}
+            {/*        setActiveIndex={setActiveIndex}*/}
+            {/*    />*/}
+            {/*)}*/}
+            {/*{attrGraphData?.surfaces && (*/}
+            {/*    <RoadAttributesGraph*/}
+            {/*        name={'Surface'}*/}
+            {/*        data={attrGraphData.surfaces}*/}
+            {/*        width={width}*/}
+            {/*        selectedPoint={selectedPoint}*/}
+            {/*        activeIndex={activeIndex}*/}
+            {/*        setActiveIndex={setActiveIndex}*/}
+            {/*    />*/}
+            {/*)}*/}
         </>
     );
 }

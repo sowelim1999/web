@@ -10,6 +10,7 @@ import { Checkbox, FormControlLabel } from '@mui/material/';
 import { makeStyles } from '@material-ui/core/styles';
 import TracksManager from '../../../manager/TracksManager';
 import GpxGraphProvider from '../graph/GpxGraphProvider';
+import Graph from "../graph/Graph";
 
 const useStyles = makeStyles({
     checkbox: {
@@ -88,7 +89,7 @@ export default function GeneralInfoTab({ setShowInfoBlock }) {
                         </div>
                     </>
                 )}
-                {hasSegments(ctx.selectedGpxFile) && <GpxGraphProvider width={ctx.infoBlockWidth} />}
+                {hasSegments(ctx.selectedGpxFile) && <Graph/>}
                 {isEmptyTrack(ctx.selectedGpxFile) === false && (
                     <>
                         <Divider sx={{ mt: '3px', mb: '12px' }} />

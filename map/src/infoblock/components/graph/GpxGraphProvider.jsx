@@ -35,83 +35,20 @@ const useStyles = makeStyles({
     },
 });
 
-const GpxGraphProvider = ({ width }) => {
+const GpxGraphProvider = ({ width, data, roadPoints, showData }) => {
     const ctx = useContext(AppContext);
     const classes = useStyles();
 
-    const [data, setData] = useState(null);
-    const [showData, setShowData] = useState(null);
-    const [roadPoints, setRoadPoints] = useState(null);
+    //const [data, setData] = useState(null);
+    //const [showData, setShowData] = useState(null);
+   // const [roadPoints, setRoadPoints] = useState(null);
 
     function hasData() {
         return showData[ELEVATION] || showData[ELEVATION_SRTM] || showData[SPEED] || showData[SLOPE];
     }
 
-    function getPoints() {
-        let points = !_.isEmpty(ctx.selectedGpxFile.points)
-            ? getAllPoints(ctx.selectedGpxFile.points)
-            : getTrackPoints(ctx.selectedGpxFile);
-        if (!_.isEmpty(points) && points[0].segment && !equalsPoints(points, roadPoints)) {
-            setRoadPoints(points);
-        } else if (_.isEmpty(points) || points[0].segment === undefined) {
-            setRoadPoints(null);
-        }
-        return points ? points : [];
-    }
-
-    useEffect(() => {
-        if (ctx.selectedGpxFile) {
-            let trackData = {};
-            let points = getPoints();
-            if (!_.isEmpty(points) && (isSrtmAppeared(trackData, ctx) || !equalsPoints(points, data?.data))) {
-                if (ctx.selectedGpxFile.analysis?.hasElevationData) {
-                    trackData.ele = true;
-                    trackData.slope = true;
-                    trackData.data = points;
-                }
-                if (ctx.selectedGpxFile.analysis?.srtmAnalysis) {
-                    trackData.srtm = true;
-                    if (!trackData.data) {
-                        trackData.data = points;
-                    }
-                }
-                if (ctx.selectedGpxFile?.analysis?.hasSpeedData) {
-                    trackData.speed = true;
-                    if (!trackData.data) {
-                        trackData.data = points;
-                    }
-                }
-                setData({ ...trackData });
-            } else if (_.isEmpty(points)) {
-                setData(null);
-            }
-        } else {
-            setData(null);
-            setRoadPoints(null);
-        }
-    }, [ctx.selectedGpxFile]);
-
-    useEffect(() => {
-        if (data) {
-            let newShowData = {};
-            if (data.ele) {
-                newShowData[ELEVATION] = data.ele;
-            }
-            if (data.srtm) {
-                newShowData[ELEVATION_SRTM] = data.srtm;
-            }
-            if (data.speed) {
-                newShowData[SPEED] = showData && showData[SPEED] ? true : '';
-            }
-            if (data.slope) {
-                newShowData[SLOPE] = showData && showData[SLOPE] ? true : '';
-            }
-            setShowData(newShowData);
-            seleniumUpdateActivity();
-        }
-    }, [data]);
-
     const mainGraphData = useMemo(() => {
+        console.log(data)
         if (!_.isEmpty(data?.data)) {
             let elevation = data.ele ? 'ele' : null;
             let elevationSRTM = data.srtm ? 'srtmEle' : null;
