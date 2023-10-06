@@ -27,6 +27,9 @@ export class geoObject extends geoRouter {
                 viaPoints: [],
                 avoidRoads: [],
             },
+            debug: {
+                map: null,
+            },
         },
     };
 

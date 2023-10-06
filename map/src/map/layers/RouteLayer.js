@@ -5,7 +5,7 @@ import AppContext, { isRouteTrack } from '../../context/AppContext';
 import MarkerOptions from '../markers/MarkerOptions';
 import { fitBoundsOptions } from '../../manager/TracksManager';
 
-import testMap from '../../tmp/map.json';
+import testMap from '../../lab/map.json';
 
 const DRAG_DEBOUNCE_MS = 10;
 
@@ -276,14 +276,37 @@ const RouteLayer = ({ geocodingData, region }) => {
 
     const passStyle = (f) => f.style; // pass geojson.features.style to set colors/etc
 
+    const debugMap = routeObject.getOption('route.debug.map');
+
     const testStyle = {
-        color: 'aqua',
         weight: 1,
+        color: 'aqua',
+    };
+
+    const debugStyle = {
+        weight: 2,
+        color: 'yellow',
     };
 
     return (
         <>
-            <GeoJSON key="test-map" data={testMap} style={testStyle} filter={(f) => f.geometry.type === 'LineString'} />
+            {debugMap && (
+                <GeoJSON
+                    key={'debug-' + routeDataKey}
+                    data={debugMap}
+                    style={debugStyle}
+                    filter={(f) => f.geometry.type === 'LineString'}
+                />
+            )}
+            {testMap && (
+                <GeoJSON
+                    key="test-map"
+                    data={testMap}
+                    style={testStyle}
+                    filter={(f) => f.geometry.type === 'LineString'}
+                />
+            )}
+
             {routeObject.getRoute() && (
                 <GeoJSON
                     ref={routeLayerRef}

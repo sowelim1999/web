@@ -4,6 +4,9 @@ import { apiGet } from '../../../util/HttpApi';
 import TracksManager from '../../../manager/TracksManager';
 import TrackLayerProvider from '../../../map/TrackLayerProvider';
 
+import testMap from '../../../lab/map.json';
+import { testRoute } from '../../../lab/route';
+
 const PROFILE_LINE = TracksManager.PROFILE_LINE;
 
 const LINE_WAITING_STYLE = TrackLayerProvider.TEMP_LINE_STYLE;
@@ -26,6 +29,8 @@ export async function calculateRoute({ changeRouteText, setRoutingErrorMsg }) {
             style,
         });
     }
+
+    this.setOption('route.debug.map', null);
 
     if (this.type === 'osrm') {
         return calculateRouteOSRM.call(this, {
@@ -163,10 +168,16 @@ function makeLineFeatureCollection({ style = {} } = {}) {
     const finishPoint = this.getOption('route.points.finish');
     const viaPoints = this.getOption('route.points.viaPoints');
 
-    const coordinates = [];
+    let coordinates = [];
     coordinates.push([startPoint.lng, startPoint.lat]);
     viaPoints?.forEach((i) => coordinates.push([i.lng, i.lat]));
     coordinates.push([finishPoint.lng, finishPoint.lat]);
+
+    if (style !== LINE_WAITING_STYLE) {
+        const { points, debugGeoJSON } = testRoute({ map: testMap, startPoint, finishPoint, viaPoints });
+        this.setOption('route.debug.map', debugGeoJSON);
+        coordinates = points;
+    }
 
     const id = md5(JSON.stringify(coordinates));
 
