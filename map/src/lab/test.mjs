@@ -14,6 +14,6 @@ const finishPoint = {
     lng: -122.41002202033998,
 };
 
-const points = testRoute({ map, startPoint, finishPoint });
+const { points } = testRoute({ map, startPoint, finishPoint });
 
 console.log(points);

@@ -280,7 +280,7 @@ const RouteLayer = ({ geocodingData, region }) => {
 
     const testStyle = {
         weight: 1,
-        color: 'aqua',
+        color: 'blue',
     };
 
     const debugStyle = {
@@ -288,24 +288,24 @@ const RouteLayer = ({ geocodingData, region }) => {
         color: 'yellow',
     };
 
+    const debugPoints = (feature, latlng) => {
+        const debugMarkerOptions = {
+            radius: 4,
+            weight: 1,
+            opacity: 1,
+            color: '#000',
+            fillOpacity: 0.8,
+            fillColor: '#ff7800',
+        };
+        return L.circleMarker(latlng, debugMarkerOptions);
+    };
+
     return (
         <>
             {debugMap && (
-                <GeoJSON
-                    key={'debug-' + routeDataKey}
-                    data={debugMap}
-                    style={debugStyle}
-                    filter={(f) => f.geometry.type === 'LineString'}
-                />
+                <GeoJSON key={'debug-' + routeDataKey} data={debugMap} style={debugStyle} pointToLayer={debugPoints} />
             )}
-            {testMap && (
-                <GeoJSON
-                    key="test-map"
-                    data={testMap}
-                    style={testStyle}
-                    filter={(f) => f.geometry.type === 'LineString'}
-                />
-            )}
+            <GeoJSON key="test-map" data={testMap} style={testStyle} filter={(f) => f.geometry.type === 'LineString'} />
 
             {routeObject.getRoute() && (
                 <GeoJSON
