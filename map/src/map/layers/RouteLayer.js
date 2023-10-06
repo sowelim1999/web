@@ -280,12 +280,12 @@ const RouteLayer = ({ geocodingData, region }) => {
 
     const testStyle = {
         weight: 1,
-        color: 'blue',
+        color: 'red',
     };
 
     const debugStyle = {
-        weight: 2,
-        color: 'yellow',
+        weight: 3,
+        color: 'black',
     };
 
     const debugPoints = (feature, latlng) => {
