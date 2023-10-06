@@ -5,6 +5,8 @@ import AppContext, { isRouteTrack } from '../../context/AppContext';
 import MarkerOptions from '../markers/MarkerOptions';
 import { fitBoundsOptions } from '../../manager/TracksManager';
 
+import testMap from '../../tmp/map.json';
+
 const DRAG_DEBOUNCE_MS = 10;
 
 function moveableMarker(routeObject, map, marker) {
@@ -274,8 +276,14 @@ const RouteLayer = ({ geocodingData, region }) => {
 
     const passStyle = (f) => f.style; // pass geojson.features.style to set colors/etc
 
+    const testStyle = {
+        color: 'aqua',
+        weight: 1,
+    };
+
     return (
         <>
+            <GeoJSON key="test-map" data={testMap} style={testStyle} filter={(f) => f.geometry.type === 'LineString'} />
             {routeObject.getRoute() && (
                 <GeoJSON
                     ref={routeLayerRef}
