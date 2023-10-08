@@ -1,5 +1,7 @@
 'use strict';
 
+export const LL_ROUND = 5; // toFixed()
+
 export function measure(f, tag, ms = 1000) {
     let counter = 0;
     let result = null;

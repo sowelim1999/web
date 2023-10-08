@@ -284,7 +284,7 @@ const RouteLayer = ({ geocodingData, region }) => {
     };
 
     const debugStyle = {
-        weight: 3,
+        weight: 2,
         color: 'black',
     };
 
