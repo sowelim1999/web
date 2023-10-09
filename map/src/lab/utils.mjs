@@ -1,8 +1,8 @@
 'use strict';
 
-export const RADIUS_START = 100; // m (1000!)
-export const RADIUS_EXPAND = 10; // m (1000!)
-export const RADIUS_MAX = 10000; // m (10000!)
+export const RADIUS_START = 5000; // m (1000!)
+export const RADIUS_EXPAND = 1000; // m (1000!)
+export const RADIUS_MAX = 50000; // m (10000!)
 
 export const LL_ROUND = 5; // toFixed()
 

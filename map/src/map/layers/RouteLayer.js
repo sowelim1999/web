@@ -5,7 +5,7 @@ import AppContext, { isRouteTrack } from '../../context/AppContext';
 import MarkerOptions from '../markers/MarkerOptions';
 import { fitBoundsOptions } from '../../manager/TracksManager';
 
-import testMap from '../../lab/map.json';
+import testMap from '../../lab/test_andorra.json';
 
 const DRAG_DEBOUNCE_MS = 10;
 

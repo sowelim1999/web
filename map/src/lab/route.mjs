@@ -1,5 +1,7 @@
 'use strict';
 
+const MEASURE = 1000;
+
 import { filterGraph } from './filterGraph.mjs';
 import { featuresToNodes } from './featuresToNodes.mjs';
 import { featuresToWeightedGraph } from './featuresToWeightedGraph.mjs';
@@ -13,8 +15,12 @@ export function testRoute({ map, startPoint, finishPoint }) {
     finishPoint && true;
 
     // nodes & graph are independent on start/finish, so they should be pre-generated
-    const mapNodes = measure(() => featuresToNodes({ features: map.features }), 'nodes()', 0);
-    const mapGraph = measure(() => featuresToWeightedGraph({ features: map.features, nodes: mapNodes }), 'graph()', 0);
+    const mapNodes = measure(() => featuresToNodes({ features: map.features }), 'nodes()', MEASURE);
+    const mapGraph = measure(
+        () => featuresToWeightedGraph({ features: map.features, nodes: mapNodes }),
+        'graph()',
+        MEASURE
+    );
 
     const segments = Object.keys(mapGraph).reduce((a, p) => a + mapGraph[p].length, 0);
     console.log('map Nodes/Graph', mapNodes.length, Object.keys(mapGraph).length, 'filled with', segments, 'segments');
@@ -27,17 +33,17 @@ export function testRoute({ map, startPoint, finishPoint }) {
 
         const { graph, startNode, finishNode } = measure(
             () => filterGraph({ graph: mapGraph, radius, startPoint, finishPoint, ignoreNodes }),
-            'filter()',
-            0
+            'filter() [' + radius / 1000 + ' km]',
+            MEASURE
         );
 
         ignoreNodes[startNode] = true;
         ignoreNodes[finishNode] = true;
 
         const segments = Object.keys(graph).reduce((a, p) => a + graph[p].length, 0);
-        console.log(cycles, 'graph', Object.keys(graph).length, 'filled with', segments, 'segments');
+        console.log('cycle', cycles, 'graph', Object.keys(graph).length, 'filled with', segments, 'segments');
 
-        if (cycles > 0) {
+        if (cycles >= 5) {
             return {
                 points: [
                     // [startPoint.lng, startPoint.lat],

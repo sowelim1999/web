@@ -4,7 +4,7 @@ import { apiGet } from '../../../util/HttpApi';
 import TracksManager from '../../../manager/TracksManager';
 import TrackLayerProvider from '../../../map/TrackLayerProvider';
 
-import testMap from '../../../lab/map.json';
+import testMap from '../../../lab/test_andorra.json';
 import { testRoute } from '../../../lab/route';
 
 const PROFILE_LINE = TracksManager.PROFILE_LINE;
