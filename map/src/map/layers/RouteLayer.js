@@ -280,22 +280,22 @@ const RouteLayer = ({ geocodingData, region }) => {
 
     const testStyle = {
         weight: 1,
-        color: 'red',
+        color: 'black',
     };
 
     const debugStyle = {
-        weight: 2,
-        color: 'black',
+        weight: 3,
+        color: 'red',
     };
 
     const debugPoints = (feature, latlng) => {
         const debugMarkerOptions = {
-            radius: 4,
+            radius: 16,
             weight: 1,
             opacity: 1,
-            color: '#000',
+            color: '#123',
             fillOpacity: 0.8,
-            fillColor: '#ff7800',
+            fillColor: 'blue',
         };
         return L.circleMarker(latlng, debugMarkerOptions);
     };
