@@ -1,12 +1,17 @@
 'use strict';
 
-const MEASURE = 1000;
+const MEASURE = 0;
 
+const RADIUS_START = 100000; // filterGraph radius (m)
+const RADIUS_EXPAND = RADIUS_START / 2; // (m)
+const RADIUS_MAX = 100000; // (m)
+
+import { aStar } from './aStar.mjs';
 import { filterGraph } from './filterGraph.mjs';
 import { featuresToNodes } from './featuresToNodes.mjs';
 import { featuresToWeightedGraph } from './featuresToWeightedGraph.mjs';
 
-import { measure, RADIUS_START, RADIUS_MAX, RADIUS_EXPAND } from './utils.mjs';
+import { measure } from './utils.mjs';
 
 export function testRoute({ map, startPoint, finishPoint }) {
     // const dist = () => getDistance(startPoint.lat, startPoint.lng, finishPoint.lat, finishPoint.lng);
@@ -31,37 +36,46 @@ export function testRoute({ map, startPoint, finishPoint }) {
     for (let radius = RADIUS_START; radius <= RADIUS_MAX; radius += RADIUS_EXPAND) {
         cycles++;
 
-        const { graph, startNode, finishNode } = measure(
+        const { graph, startNodeLL, finishNodeLL } = measure(
             () => filterGraph({ graph: mapGraph, radius, startPoint, finishPoint, ignoreNodes }),
-            'filter() [' + radius / 1000 + ' km]',
+            `filter() [${radius} m]`,
             MEASURE
         );
 
-        ignoreNodes[startNode] = true;
-        ignoreNodes[finishNode] = true;
+        // XXX think about better way
+        // ignoreNodes[startNodeLL] = true;
+        // ignoreNodes[finishNodeLL] = true;
 
         const segments = Object.keys(graph).reduce((a, p) => a + graph[p].length, 0);
-        console.log('cycle', cycles, 'graph', Object.keys(graph).length, 'filled with', segments, 'segments');
+        console.log(cycles, 'radius', radius, 'graph', Object.keys(graph).length, 'filled with', segments, 'segments');
 
-        if (cycles >= 5) {
+        const result = measure(() => aStar({ graph, startNodeLL, finishNodeLL }), 'aStar()', MEASURE);
+        // const result = measure(() => aStar({ graph, finishNodeLL, startNodeLL }), 'aStar()', MEASURE);
+
+        if (result) {
+            const { points } = result;
+
             return {
-                points: [
-                    // [startPoint.lng, startPoint.lat],
-                    // [finishPoint.lng, finishPoint.lat],
-                ],
-                debugGeoJSON: makeGeoJSON({ points: [startNode, finishNode], graph: graph }),
-                // debugGeoJSON: makeGeoJSON({ points: nodes, graph: graph }),
+                points, // geometry of the route
+                debugGeoJSON: makeGeoJSON({ points: [startNodeLL, finishNodeLL], graph: {} }),
+                // debugGeoJSON: makeGeoJSON({ points: [startNodeLL, finishNodeLL], graph: graph }),
+                // debugGeoJSON: makeGeoJSON({ points: mapNodes, graph: graph }),
             };
+        }
+
+        const filteredCount = Object.keys(graph).length + Object.keys(ignoreNodes).length;
+
+        // stop when full mapGraph was already processed
+        if (filteredCount >= Object.keys(mapGraph).length) {
+            break;
         }
     }
 
-    throw new Error('failed');
-
-    // filter nodes closer to A<->B line
-    // create graph from filtered nodes
     // check is graph fully connected (?)
     // prioritize graph by distance to A/B
     // when it's connected, call A*
+
+    throw new Error('no route found');
 }
 
 function makeGeoJSON({ points, graph }) {
