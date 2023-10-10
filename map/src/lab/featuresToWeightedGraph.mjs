@@ -41,7 +41,7 @@ export function featuresToWeightedGraph({ features, nodes }) {
                         graph[start] || (graph[start] = []);
                         graph[end] || (graph[end] = []);
                         graph[start].push({ node: end, weight, segment });
-                        graph[end].push({ node: start, weight, segment });
+                        graph[end].push({ node: start, weight, segment: [...segment].reverse() }); // reverse geo
 
                         // start over
                         start = end;
