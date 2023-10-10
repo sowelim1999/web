@@ -2,16 +2,22 @@
 
 import { readFileSync } from 'node:fs';
 import { testRoute } from './route.mjs';
-const map = JSON.parse(readFileSync('./test_andorra.json'));
 
-// andorra
-const startPoint = { lat: 42.43648, lng: 1.47431 }; // 42.43648, 1.47431
-const finishPoint = { lat: 42.63151, lng: 1.48114 }; // 42.63151, 1.48114
+// Monaco
+const map = JSON.parse(readFileSync('./test_monaco.json'));
+const startPoint = { lat: 43.72807, lng: 7.4238 };
+const finishPoint = { lat: 43.74659, lng: 7.43895 };
 
-// sf
+// Andorra
+// const map = JSON.parse(readFileSync('./test_andorra.json'));
+// const startPoint = { lat: 42.43648, lng: 1.47431 }; // 42.43648, 1.47431
+// const finishPoint = { lat: 42.63151, lng: 1.48114 }; // 42.63151, 1.48114
+
+// San Francisco square
+// const map = JSON.parse(readFileSync('./test_sf_square.json'));
 // const startPoint = { lat: 37.80503706092163, lng: -122.43021368980409 };
 // const finishPoint = { lat: 37.800828177295934, lng: -122.41002202033998 };
 
 const { points } = testRoute({ map, startPoint, finishPoint });
 
-console.log(points);
+console.log(!!points);
