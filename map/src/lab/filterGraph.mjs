@@ -5,7 +5,7 @@ import { getDistance } from './utils.mjs';
 /**
  * @name filterGraph
  * @params { graph, radius, startPoint, finishPoint, ignoreNodes }
- * @return { graph, startNode, finishNode }
+ * @return { graph, startNodeLL, finishNodeLL }
  *
  * Keep nodes belong to line between startPoint/finishPoint.
  * Use radius as a maximum distance around start/finish circles.
@@ -17,7 +17,7 @@ import { getDistance } from './utils.mjs';
  * Each cycle should increase the radius and expand `ignoreNodes` map object.
  * Use `ignoreNodes` to avoid "bad" nodes (e.g. append "unrouted" start/finish nodes).
  *
- * TODO: filtering using bbox instead of radius should be **much** faster
+ * XXX filtering using bbox instead of radius should be **much** faster
  */
 export function filterGraph({ graph, radius, startPoint, finishPoint, ignoreNodes = {} }) {
     const isInside = ({ lat, lng, center, radius }) => getDistance(lat, lng, center.lat, center.lng) <= radius;
@@ -29,7 +29,7 @@ export function filterGraph({ graph, radius, startPoint, finishPoint, ignoreNode
         const distance = Math.round(getDistance(startPoint.lat, startPoint.lng, finishPoint.lat, finishPoint.lng));
         for (let i = radius; i <= distance; i += radius) {
             const center = {
-                // XXX: non-haversine - need more accuracy for long distance
+                // XXX non-haversine - need more accuracy for long distance
                 lat: startPoint.lat + (i / distance) * (finishPoint.lat - startPoint.lat),
                 lng: startPoint.lng + (i / distance) * (finishPoint.lng - startPoint.lng),
             };
@@ -40,8 +40,8 @@ export function filterGraph({ graph, radius, startPoint, finishPoint, ignoreNode
         return false;
     };
 
-    let startNode = null;
-    let finishNode = null;
+    let startNodeLL = null;
+    let finishNodeLL = null;
     let startMin = Infinity;
     let finishMin = Infinity;
 
@@ -51,12 +51,12 @@ export function filterGraph({ graph, radius, startPoint, finishPoint, ignoreNode
 
         if (startDist < startMin) {
             startMin = startDist;
-            startNode = ll;
+            startNodeLL = ll;
         }
 
         if (finishDist < finishMin) {
             finishMin = finishDist;
-            finishNode = ll;
+            finishNodeLL = ll;
         }
     }
 
@@ -97,5 +97,5 @@ export function filterGraph({ graph, radius, startPoint, finishPoint, ignoreNode
             return false;
         })
         .forEach((ll) => (filtered[ll] = graph[ll]));
-    return { graph: filtered, startNode, finishNode };
+    return { graph: filtered, startNodeLL, finishNodeLL };
 }
