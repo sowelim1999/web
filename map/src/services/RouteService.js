@@ -191,7 +191,8 @@ export function RouteService() {
                     // approximate each segment separately
                     for (let i = 0; i < track.points.length; i++) {
                         const geometry = track.points[i].geometry;
-                        if (geometry.length > 0) {
+                        // LAB: do not approximate anything
+                        if (geometry.length < /* > */ 0) {
                             track.points[i].geometry = await getApproximatePoints({ points: geometry, profile });
                         }
                     }

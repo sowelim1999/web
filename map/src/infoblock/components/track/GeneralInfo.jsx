@@ -4,8 +4,8 @@ import AppContext, { isLocalTrack, isCloudTrack, isRouteTrack } from '../../../c
 import TracksManager, {
     hasSegments,
     isEmptyTrack,
-    applySrtmElevation,
-    eligibleToApplySrtm,
+    // applySrtmElevation,
+    // eligibleToApplySrtm,
     prepareDesc,
 } from '../../../manager/TracksManager';
 import { prepareFileName, toHHMMSS } from '../../../util/Utils';
@@ -70,14 +70,15 @@ export default function GeneralInfo({ width }) {
     }, [ctx.selectedGpxFile?.metaData?.desc]);
 
     // auto-srtm
+    // LAB: no auto-srtm
     useEffect(() => {
-        if (eligibleToApplySrtm({ track: ctx.selectedGpxFile })) {
-            const setLoading = setLoadingSrtm;
-            const track = { ...ctx.selectedGpxFile };
-            // mark now as already-implied (to skip dupe effects)
-            ctx.setSelectedGpxFile((o) => ({ ...o, isSrtmApplied: true }));
-            applySrtmElevation({ track, setLoading }).then((success) => ctx.setUnverifiedGpxFile(success));
-        }
+        // if (eligibleToApplySrtm({ track: ctx.selectedGpxFile })) {
+        //     const setLoading = setLoadingSrtm;
+        //     const track = { ...ctx.selectedGpxFile };
+        //     // mark now as already-implied (to skip dupe effects)
+        //     ctx.setSelectedGpxFile((o) => ({ ...o, isSrtmApplied: true }));
+        //     applySrtmElevation({ track, setLoading }).then((success) => ctx.setUnverifiedGpxFile(success));
+        // }
     }, [ctx.selectedGpxFile.name, ctx.selectedGpxFile.analysis]);
 
     useEffect(() => {
