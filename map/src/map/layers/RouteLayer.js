@@ -288,7 +288,7 @@ const RouteLayer = ({ geocodingData, region }) => {
 
     const debugPoints = (feature, latlng) => {
         const debugMarkerOptions = {
-            radius: 3, // use 3 for nodes, 16 for start/finish
+            radius: 16, // use 3 for nodes, 16 for start/finish
             weight: 1,
             opacity: 1,
             color: '#123',
