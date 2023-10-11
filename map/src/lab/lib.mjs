@@ -1,8 +1,6 @@
 'use strict';
 
-const AVOID_HEURISTICS = false;
-
-export const LL_ROUND = 5; // [lat,lng].toFixed() as a node key
+export const LL_ROUND = 5; // [lat,lng].toFixed() as a node key (LL_ROUND = 5 = ~1m)
 
 export class Node {
     constructor(ll) {
@@ -41,15 +39,6 @@ export const getDistanceEuclidean = (lat1, lng1, lat2, lng2) => {
     const b = lng2 - lng1;
     return Math.sqrt(a * a + b * b) * 111111;
 };
-
-export function heuristicDistance(nodeA, nodeB) {
-    if (AVOID_HEURISTICS) {
-        return 0;
-    }
-    const [latA, lngA] = nodeA.ll.split(',');
-    const [latB, lngB] = nodeB.ll.split(',');
-    return getDistanceEuclidean(latA, lngA, latB, lngB);
-}
 
 export function getGeometryDistance(points) {
     let distance = 0;

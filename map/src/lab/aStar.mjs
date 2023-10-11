@@ -1,6 +1,18 @@
 'use strict';
 
-import { Node, Debug, heuristicDistance, getGeometryDistance, getPathSegmentsGeometry } from './lib.mjs';
+import {
+    Node,
+    Debug,
+    getGeometryDistance,
+    getPathSegmentsGeometry,
+    getDistanceEuclidean,
+    getDistance,
+} from './lib.mjs';
+
+const USE_HEURISTICS = true;
+const FAST_HEURISTIRCS = true;
+
+const H = USE_HEURISTICS ? (FAST_HEURISTIRCS ? getDistanceEuclidean : getDistance) : null;
 
 export function aStar({ graph, startNodeLL, finishNodeLL }) {
     const debug = new Debug();
@@ -75,4 +87,13 @@ export function aStar({ graph, startNodeLL, finishNodeLL }) {
     }
 
     return { geometry: null, debug }; // failed
+}
+
+function heuristicDistance(nodeA, nodeB) {
+    if (H === null) {
+        return 0;
+    }
+    const [latA, lngA] = nodeA.ll.split(',');
+    const [latB, lngB] = nodeB.ll.split(',');
+    return H(latA, lngA, latB, lngB);
 }
