@@ -33,7 +33,7 @@ export function featuresToWeightedGraph({ features, nodes }) {
                         start = ll;
                         // reset accumulation
                         dist = 0;
-                        segment = [];
+                        segment = [[lng, lat]];
                     } else {
                         // this is the end
                         const end = ll;
@@ -48,7 +48,7 @@ export function featuresToWeightedGraph({ features, nodes }) {
 
                         // reset accumulation
                         dist = 0;
-                        segment = [];
+                        segment = [[lng, lat]];
                     }
                 }
             });
