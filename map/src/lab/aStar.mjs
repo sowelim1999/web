@@ -1,13 +1,6 @@
-import { getDistanceEuclidean, getDistance } from './utils.mjs';
+'use strict';
 
-class Node {
-    constructor(ll) {
-        this.ll = ll;
-        this.parent = null; // parent (Node class)
-        this.fromStart = Infinity; // cummulative weight from the start (g)
-        this.toEnd = 0; // weight from the start + heuristic-to-the-end (to sort queue) (f)
-    }
-}
+import { Node, heuristicDistance, getGeometryDistance, getPathSegmentsGeometry } from './lib.mjs';
 
 export function aStar({ graph, startNodeLL, finishNodeLL }) {
     const openNodes = []; // TODO https://github.com/mourner/tinyqueue
@@ -43,12 +36,14 @@ export function aStar({ graph, startNodeLL, finishNodeLL }) {
                 parent = parent.parent;
             }
 
-            const points = pathSegmentsGeometry(path.reverse());
+            path.reverse();
 
-            debug.points = points.length;
-            debug.distance = getPointsDistance(points);
+            const geometry = getPathSegmentsGeometry(path);
 
-            return { points, debug };
+            debug.points = geometry.length;
+            debug.distance = getGeometryDistance(geometry);
+
+            return { geometry, debug };
         }
 
         for (const edge of graph[current.ll] || []) {
@@ -68,7 +63,7 @@ export function aStar({ graph, startNodeLL, finishNodeLL }) {
             const preliminaryFromStart = current.fromStart + edge.weight;
             if (preliminaryFromStart < neighbor.fromStart) {
                 neighbor.fromStart = preliminaryFromStart;
-                neighbor.toEnd = neighbor.fromStart + heuristic(neighbor, finish);
+                neighbor.toEnd = neighbor.fromStart + heuristicDistance(neighbor, finish);
             }
 
             // add to queue if not found
@@ -82,38 +77,5 @@ export function aStar({ graph, startNodeLL, finishNodeLL }) {
         }
     }
 
-    return { points: null, debug }; // failed
-}
-
-function heuristic(nodeA, nodeB) {
-    // if (nodeA) {
-    //     return 0;
-    // }
-    const [latA, lngA] = nodeA.ll.split(',');
-    const [latB, lngB] = nodeB.ll.split(',');
-    return getDistanceEuclidean(latA, lngA, latB, lngB);
-}
-
-function pathSegmentsGeometry(path) {
-    let points = [];
-    for (const node of path) {
-        if (node.segment) {
-            points = points.concat(node.segment);
-        }
-    }
-    return points;
-}
-
-function getPointsDistance(points) {
-    let distance = 0;
-
-    if (points.length >= 2) {
-        for (let i = 1; i < points.length; i++) {
-            const A = points[i];
-            const B = points[i - 1];
-            distance += getDistance(A[0], A[1], B[0], B[1]);
-        }
-    }
-
-    return Math.round(distance);
+    return { geometry: null, debug }; // failed
 }

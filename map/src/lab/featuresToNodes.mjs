@@ -1,6 +1,6 @@
 'use strict';
 
-import { LL_ROUND } from './utils.mjs';
+import { LL_ROUND } from './lib.mjs';
 
 /**
  * @name featuresToNodes

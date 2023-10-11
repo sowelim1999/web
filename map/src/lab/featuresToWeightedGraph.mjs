@@ -1,6 +1,6 @@
 'use strict';
 
-import { LL_ROUND, getDistance } from './utils.mjs';
+import { LL_ROUND, getDistance } from './lib.mjs';
 
 /**
  * @name featuresToWeightedGraph

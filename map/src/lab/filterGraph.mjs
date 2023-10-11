@@ -1,6 +1,6 @@
 'use strict';
 
-import { getDistance } from './utils.mjs';
+import { getDistance } from './lib.mjs';
 
 /**
  * @name filterGraph

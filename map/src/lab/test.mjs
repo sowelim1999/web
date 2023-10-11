@@ -18,6 +18,6 @@ const finishPoint = { lat: 43.74659, lng: 7.43895 };
 // const startPoint = { lat: 37.80503706092163, lng: -122.43021368980409 };
 // const finishPoint = { lat: 37.800828177295934, lng: -122.41002202033998 };
 
-const { points } = testRoute({ map, startPoint, finishPoint });
+const { geometry } = testRoute({ map, startPoint, finishPoint });
 
-console.log(!!points);
+console.log(!!geometry);

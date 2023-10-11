@@ -176,9 +176,9 @@ function makeLineFeatureCollection({ style = {} } = {}) {
     coordinates.push([finishPoint.lng, finishPoint.lat]);
 
     if (style !== LINE_WAITING_STYLE) {
-        const { points, debugGeoJSON } = testRoute({ map: testMap, startPoint, finishPoint, viaPoints });
+        const { geometry, debugGeoJSON } = testRoute({ map: testMap, startPoint, finishPoint, viaPoints });
         this.setOption('route.debug.map', debugGeoJSON);
-        coordinates = points;
+        coordinates = geometry;
     }
 
     const id = md5(JSON.stringify(coordinates));

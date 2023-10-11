@@ -286,11 +286,6 @@ const RouteLayer = ({ geocodingData, region }) => {
         color: 'black',
     };
 
-    const debugStyle = {
-        weight: 1,
-        color: 'red',
-    };
-
     const debugPoints = (feature, latlng) => {
         const debugMarkerOptions = {
             radius: 3, // use 3 for nodes, 16 for start/finish
@@ -306,7 +301,7 @@ const RouteLayer = ({ geocodingData, region }) => {
     return (
         <>
             {debugMap && (
-                <GeoJSON key={'debug-' + routeDataKey} data={debugMap} style={debugStyle} pointToLayer={debugPoints} />
+                <GeoJSON key={'debug-' + routeDataKey} data={debugMap} style={passStyle} pointToLayer={debugPoints} />
             )}
             {testMap && (
                 <GeoJSON
