@@ -11,6 +11,8 @@ import { LL_ROUND } from './lib.mjs';
  * Map all points.toFixed(5) into ll["lat,lng"] to find intersections.
  * Map the LineString edges (1st, last points) to include them as nodes.
  * Finally, return nodes(vertices) by filtering Map for 2+ points counted.
+ *
+ * XXX is this the correct way to find intersection between OSM lines?
  */
 export function featuresToNodes({ features }) {
     const latlng = {};

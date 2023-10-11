@@ -44,7 +44,7 @@ export function testRoute({ map, startPoint, finishPoint }) {
             MEASURE
         );
 
-        // XXX think about better way
+        // XXX think about better way to deal with non-routable start/end nodes
         // ignoreNodes[startNodeLL] = true;
         // ignoreNodes[finishNodeLL] = true;
 

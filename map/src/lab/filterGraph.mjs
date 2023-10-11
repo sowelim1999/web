@@ -29,7 +29,7 @@ export function filterGraph({ graph, radius, startPoint, finishPoint, ignoreNode
         const distance = Math.round(getDistance(startPoint.lat, startPoint.lng, finishPoint.lat, finishPoint.lng));
         for (let i = radius; i <= distance; i += radius) {
             const center = {
-                // XXX non-haversine - need more accuracy for long distance
+                // non-haversine - need more accuracy for long distance
                 lat: startPoint.lat + (i / distance) * (finishPoint.lat - startPoint.lat),
                 lng: startPoint.lng + (i / distance) * (finishPoint.lng - startPoint.lng),
             };

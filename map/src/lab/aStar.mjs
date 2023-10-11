@@ -1,8 +1,10 @@
 'use strict';
 
-import { Node, heuristicDistance, getGeometryDistance, getPathSegmentsGeometry } from './lib.mjs';
+import { Node, Debug, heuristicDistance, getGeometryDistance, getPathSegmentsGeometry } from './lib.mjs';
 
 export function aStar({ graph, startNodeLL, finishNodeLL }) {
+    const debug = new Debug();
+
     const openNodes = []; // TODO https://github.com/mourner/tinyqueue
     const closedNodes = new Set();
 
@@ -11,13 +13,8 @@ export function aStar({ graph, startNodeLL, finishNodeLL }) {
     start.fromStart = 0; // toEnd ?
     openNodes.push(start);
 
-    const debug = {
-        queued: 0,
-        viewed: 0,
-    };
-
     while (openNodes.length > 0) {
-        // XXX: use priority queue (binary heap) instead of sort()
+        // XXX use priority queue (binary heap) instead of sort()/push()
         openNodes.sort((a, b) => a.toEnd - b.toEnd);
 
         // shift the nearest node (by toEnd) and save it as closed

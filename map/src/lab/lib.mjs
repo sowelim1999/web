@@ -1,15 +1,24 @@
 'use strict';
 
-export const LL_ROUND = 5; // [lat,lng].toFixed() as a node key
-
 const AVOID_HEURISTICS = false;
+
+export const LL_ROUND = 5; // [lat,lng].toFixed() as a node key
 
 export class Node {
     constructor(ll) {
-        this.ll = ll;
+        this.ll = ll; // node key ("lat,lng")
         this.parent = null; // parent (Node class)
         this.fromStart = Infinity; // cummulative weight from the start (g)
         this.toEnd = 0; // weight from the start + heuristic-to-the-end (to sort queue) (f)
+    }
+}
+
+export class Debug {
+    constructor() {
+        this.queued = 0;
+        this.viewed = 0;
+        // points
+        // distance
     }
 }
 
