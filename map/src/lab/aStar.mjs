@@ -1,4 +1,4 @@
-import { getDistanceEuclidean } from './utils.mjs';
+import { getDistanceEuclidean, getDistance } from './utils.mjs';
 
 class Node {
     constructor(ll) {
@@ -13,38 +13,47 @@ export function aStar({ graph, startNodeLL, finishNodeLL }) {
     const openNodes = []; // TODO https://github.com/mourner/tinyqueue
     const closedNodes = new Set();
 
-    const debugViewed = new Set();
-    const debugQueued = new Set();
-
     const finish = new Node(finishNodeLL);
     const start = new Node(startNodeLL);
     start.fromStart = 0; // toEnd ?
     openNodes.push(start);
 
-    while (openNodes.length > 0) {
-        openNodes.sort((a, b) => a.toEnd - b.toEnd); // XXX: use priority queue (binary heap) instead of sort()
+    const debug = {
+        queued: 0,
+        viewed: 0,
+    };
 
+    while (openNodes.length > 0) {
+        // XXX: use priority queue (binary heap) instead of sort()
+        openNodes.sort((a, b) => a.toEnd - b.toEnd);
+
+        // shift the nearest node (by toEnd) and save it as closed
         const current = openNodes.shift();
         closedNodes.add(current.ll);
 
         // finally
         if (current.ll === finishNodeLL) {
             const path = [];
-            let temp = current;
-            while (temp) {
-                path.unshift(temp);
-                temp = temp.parent;
+
+            path.push(current);
+            let parent = current.parent;
+
+            while (parent) {
+                path.push(parent);
+                parent = parent.parent;
             }
-            const points = pathSegmentsGeometry(path);
-            // console.log(debugViewed.size); // XXX
-            // console.log(debugQueued.size); // XXX
-            // console.log(path);
-            return { points };
+
+            const points = pathSegmentsGeometry(path.reverse());
+
+            debug.points = points.length;
+            debug.distance = getPointsDistance(points);
+
+            return { points, debug };
         }
 
         for (const edge of graph[current.ll] || []) {
             const edgeLL = edge.node;
-            debugViewed.add(edgeLL);
+            debug.viewed++;
 
             // already closed - skip
             if (closedNodes.has(edgeLL)) {
@@ -60,20 +69,20 @@ export function aStar({ graph, startNodeLL, finishNodeLL }) {
             if (preliminaryFromStart < neighbor.fromStart) {
                 neighbor.fromStart = preliminaryFromStart;
                 neighbor.toEnd = neighbor.fromStart + heuristic(neighbor, finish);
-                // neighbor.parent = current; // XXX
             }
 
             // add to queue if not found
             if (!found) {
+                edge.debug = true; // debug - modify graph - remove later
+                debug.queued++; // debug
                 neighbor.parent = current;
                 neighbor.segment = edge.segment;
-                debugQueued.add(neighbor.ll);
                 openNodes.push(neighbor);
             }
         }
     }
 
-    return null; // failed
+    return { points: null, debug }; // failed
 }
 
 function heuristic(nodeA, nodeB) {
@@ -92,6 +101,19 @@ function pathSegmentsGeometry(path) {
             points = points.concat(node.segment);
         }
     }
-    // console.log(points);
     return points;
+}
+
+function getPointsDistance(points) {
+    let distance = 0;
+
+    if (points.length >= 2) {
+        for (let i = 1; i < points.length; i++) {
+            const A = points[i];
+            const B = points[i - 1];
+            distance += getDistance(A[0], A[1], B[0], B[1]);
+        }
+    }
+
+    return Math.round(distance);
 }

@@ -6,6 +6,8 @@ const RADIUS_START = 100000; // filterGraph radius (m)
 const RADIUS_EXPAND = RADIUS_START / 2; // (m)
 const RADIUS_MAX = 100000; // (m)
 
+const TEST_REVERSE = true;
+
 import { aStar } from './aStar.mjs';
 import { filterGraph } from './filterGraph.mjs';
 import { featuresToNodes } from './featuresToNodes.mjs';
@@ -28,7 +30,7 @@ export function testRoute({ map, startPoint, finishPoint }) {
     );
 
     const segments = Object.keys(mapGraph).reduce((a, p) => a + mapGraph[p].length, 0);
-    console.log('map Nodes/Graph', mapNodes.length, Object.keys(mapGraph).length, 'filled with', segments, 'segments');
+    console.log('map nodes', mapNodes.length, 'graph', Object.keys(mapGraph).length, 'edges', segments);
 
     let cycles = 0;
     const ignoreNodes = {}; // used to find better startNode/finishNode every cycle
@@ -47,38 +49,48 @@ export function testRoute({ map, startPoint, finishPoint }) {
         // ignoreNodes[finishNodeLL] = true;
 
         const segments = Object.keys(graph).reduce((a, p) => a + graph[p].length, 0);
-        console.log(cycles, 'radius', radius, 'graph', Object.keys(graph).length, 'filled with', segments, 'segments');
+        console.log('cycle', cycles, 'radius', radius, 'graph', Object.keys(graph).length, 'edges', segments);
 
         const result = measure(() => aStar({ graph, startNodeLL, finishNodeLL }), 'aStar()', MEASURE);
-        // const result = measure(() => aStar({ graph, finishNodeLL, startNodeLL }), 'aStar()', MEASURE);
 
-        if (result) {
-            const { points } = result;
+        const { points, debug } = result;
+        console.log('A* direct', !!points, debug);
+
+        if (points) {
+            if (TEST_REVERSE) {
+                const reverse = measure(
+                    () => aStar({ graph, startNodeLL: finishNodeLL, finishNodeLL: startNodeLL }),
+                    'aStar-reverse()',
+                    MEASURE
+                );
+
+                const { points, debug } = reverse;
+                console.log('A* reverse', !!points, debug);
+            }
 
             return {
                 points, // geometry of the route
-                debugGeoJSON: makeGeoJSON({ points: [startNodeLL, finishNodeLL], graph: {} }),
-                // debugGeoJSON: makeGeoJSON({ points: [startNodeLL, finishNodeLL], graph: graph }),
-                // debugGeoJSON: makeGeoJSON({ points: mapNodes, graph: graph }),
+                debugGeoJSON: makeGeoJSON({ points: [startNodeLL, finishNodeLL], graph, debugOnly: true }),
             };
         }
 
         const filteredCount = Object.keys(graph).length + Object.keys(ignoreNodes).length;
 
-        // stop when full mapGraph was already processed
+        // stop cycle when full mapGraph was already processed
         if (filteredCount >= Object.keys(mapGraph).length) {
             break;
         }
     }
 
-    // check is graph fully connected (?)
-    // prioritize graph by distance to A/B
-    // when it's connected, call A*
+    console.log('no route found');
 
-    throw new Error('no route found');
+    return {
+        points: [],
+        debugGeoJSON: makeGeoJSON({ points: mapNodes, graph: {} }),
+    };
 }
 
-function makeGeoJSON({ points, graph }) {
+function makeGeoJSON({ points, graph, debugOnly = false }) {
     const features = [];
 
     points.forEach((ll) => {
@@ -96,18 +108,20 @@ function makeGeoJSON({ points, graph }) {
 
     Object.keys(graph).forEach((g) => {
         graph[g].forEach((e) => {
-            const [latA, lngA] = g.split(',');
-            const [latB, lngB] = e.node.split(',');
-            features.push({
-                type: 'Feature',
-                geometry: {
-                    type: 'LineString',
-                    coordinates: [
-                        [lngA, latA],
-                        [lngB, latB],
-                    ],
-                },
-            });
+            if (debugOnly === false || e.debug) {
+                const [latA, lngA] = g.split(',');
+                const [latB, lngB] = e.node.split(',');
+                features.push({
+                    type: 'Feature',
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: [
+                            [lngA, latA],
+                            [lngB, latB],
+                        ],
+                    },
+                });
+            }
         });
     });
 
