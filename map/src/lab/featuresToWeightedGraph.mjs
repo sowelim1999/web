@@ -5,7 +5,7 @@ import { LL_ROUND, getDistance } from './lib.mjs';
 /**
  * @name featuresToWeightedGraph
  * @params { features, nodes } (GeoJSON features, nodes from featuresToNodes)
- * @return Object [startNode|endNode] = Array [node: endNode|startNode, weight, segment] (Bidirectional Weighted Graph)
+ * @return Object [startNode|endNode] = Array [node: endNode|startNode, weight, segment] (Undirected Weighted Graph)
  */
 export function featuresToWeightedGraph({ features, nodes }) {
     const graph = {};

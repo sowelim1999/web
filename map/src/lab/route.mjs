@@ -91,7 +91,7 @@ export function testRoute({ map, startPoint, finishPoint }) {
     console.log('route not found');
 
     return {
-        points: [],
+        geometry: [],
         debugGeoJSON: makeGeoJSON({ points: mapNodes, graph: {} }),
     };
 }
