@@ -37,9 +37,9 @@ export const getDistance = (lat1, lng1, lat2, lng2) => {
 
 // 25% faster than haversine - ok for heuristics
 export const getDistanceEuclidean = (lat1, lng1, lat2, lng2) => {
-    const a = Math.pow(lat2 - lat1, 2);
-    const b = Math.pow(lng2 - lng1, 2);
-    return Math.sqrt(a + b) * 100000;
+    const a = lat2 - lat1;
+    const b = lng2 - lng1;
+    return Math.sqrt(a * a + b * b) * 111111;
 };
 
 export function heuristicDistance(nodeA, nodeB) {
