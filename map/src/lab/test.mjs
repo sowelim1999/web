@@ -13,14 +13,14 @@ import { testRoute } from './route.mjs';
 // const finishPoint = { lat: 43.74659, lng: 7.43895 };
 
 // Andorra
-const map = JSON.parse(readFileSync('./test_andorra.json'));
-const startPoint = { lat: 42.43648, lng: 1.47431 }; // 42.43648, 1.47431
-const finishPoint = { lat: 42.63151, lng: 1.48114 }; // 42.63151, 1.48114
+// const map = JSON.parse(readFileSync('./test_andorra.json'));
+// const startPoint = { lat: 42.43648, lng: 1.47431 }; // 42.43648, 1.47431
+// const finishPoint = { lat: 42.63151, lng: 1.48114 }; // 42.63151, 1.48114
 
 // San Francisco square
-// const map = JSON.parse(readFileSync('./test_sf_square.json'));
-// const startPoint = { lat: 37.79731, lng: -122.4254 };
-// const finishPoint = { lat: 37.80382, lng: -122.42843 };
+const map = JSON.parse(readFileSync('./test_sf_square.json'));
+const startPoint = { lat: 37.80449, lng: -122.4302 };
+const finishPoint = { lat: 37.78922, lng: -122.4107 };
 
 const args = process.argv.slice(2);
 

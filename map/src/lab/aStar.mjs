@@ -68,19 +68,21 @@ export function aStar({ graph, startNodeLL, finishNodeLL }) {
             const found = openNodes.find((node) => node.ll === edgeLL); // ref
             const neighbor = found ?? new Node(edgeLL);
 
-            // check and update shorter way
+            // check and update the shorter way
             const preliminaryFromStart = current.fromStart + edge.weight;
             if (preliminaryFromStart < neighbor.fromStart) {
                 neighbor.fromStart = preliminaryFromStart;
                 neighbor.toEnd = neighbor.fromStart + heuristicDistance(neighbor, finish);
+                // neighbor.parent = current; // FIXME
             }
 
             // add to queue if not found
             if (!found) {
                 edge.debug = true; // debug - modify graph - remove later
                 debug.queued++; // debug
-                neighbor.parent = current;
+
                 neighbor.segment = edge.segment;
+                neighbor.parent = current;
                 openNodes.push(neighbor);
             }
         }
