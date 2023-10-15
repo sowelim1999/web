@@ -5,7 +5,7 @@ import TracksManager from '../../../manager/TracksManager';
 import TrackLayerProvider from '../../../map/TrackLayerProvider';
 
 import { testRoute } from '../../../lab/route';
-import { graph } from '../../../lab/json/graph.json';
+import graph from '../../../lab/json/graph.json';
 
 const PROFILE_LINE = TracksManager.PROFILE_LINE;
 
