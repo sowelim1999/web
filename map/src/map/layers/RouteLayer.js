@@ -6,9 +6,9 @@ import MarkerOptions from '../markers/MarkerOptions';
 import { fitBoundsOptions } from '../../manager/TracksManager';
 
 const testMap = null;
-// import testMap from '../../lab/test_monaco.json';
-// import testMap from '../../lab/test_andorra.json';
-// import testMap from '../../lab/test_sf_square.json';
+// import testMap from '../../lab/json/test_monaco.json';
+// import testMap from '../../lab/json/test_andorra.json';
+// import testMap from '../../lab/json/test_sf_square.json';
 
 const DRAG_DEBOUNCE_MS = 10;
 

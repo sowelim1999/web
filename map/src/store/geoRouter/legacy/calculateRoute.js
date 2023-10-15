@@ -4,10 +4,8 @@ import { apiGet } from '../../../util/HttpApi';
 import TracksManager from '../../../manager/TracksManager';
 import TrackLayerProvider from '../../../map/TrackLayerProvider';
 
-// import testMap from '../../../lab/test_monaco.json';
-// import testMap from '../../../lab/test_andorra.json';
-import testMap from '../../../lab/test_sf_square.json';
 import { testRoute } from '../../../lab/route';
+import { graph } from '../../../lab/json/graph.json';
 
 const PROFILE_LINE = TracksManager.PROFILE_LINE;
 
@@ -176,7 +174,7 @@ function makeLineFeatureCollection({ style = {} } = {}) {
     coordinates.push([finishPoint.lng, finishPoint.lat]);
 
     if (style !== LINE_WAITING_STYLE) {
-        const { geometry, debugGeoJSON } = testRoute({ map: testMap, startPoint, finishPoint, viaPoints });
+        const { geometry, debugGeoJSON } = testRoute({ graph, startPoint, finishPoint });
         this.setOption('route.debug.map', debugGeoJSON);
         coordinates = geometry;
     }
