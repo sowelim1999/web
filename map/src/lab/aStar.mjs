@@ -10,8 +10,8 @@ import {
 } from './lib.mjs';
 
 const USE_HEURISTICS = true;
-const FAST_HEURISTIRCS = true;
 
+const FAST_HEURISTIRCS = true;
 const H = USE_HEURISTICS ? (FAST_HEURISTIRCS ? getDistanceEuclidean : getDistance) : null;
 
 export function aStar({ graph, startNodeLL, finishNodeLL }) {

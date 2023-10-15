@@ -41,7 +41,7 @@ export const getDistance = (lat1, lng1, lat2, lng2) => {
 export const getDistanceEuclidean = (lat1, lng1, lat2, lng2) => {
     const a = lat2 - lat1;
     const b = lng2 - lng1;
-    return Math.sqrt(a * a + b * b) * 111111;
+    return Math.sqrt(Math.pow(a * 111229, 2) + Math.pow(b * 71695, 2));
 };
 
 export function getGeometryDistance(points) {

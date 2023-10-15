@@ -37,7 +37,7 @@ export function featuresToWeightedGraph({ features, nodes }) {
                     } else {
                         // this is the end
                         const end = ll;
-                        const weight = Math.round(dist);
+                        const weight = dist;
                         graph[start] || (graph[start] = []);
                         graph[end] || (graph[end] = []);
                         graph[start].push({ node: end, weight, segment });
