@@ -49,7 +49,6 @@ export function aStar({ graph, startNodeLL, finishNodeLL }) {
 
             const geometry = getPathSegmentsGeometry(path);
 
-            debug.points = geometry.length;
             debug.distance = getGeometryDistance(geometry);
 
             return { geometry, debug };

@@ -1,7 +1,6 @@
 'use strict';
 
 const MEASURE = 0;
-
 const TEST_REVERSE = true;
 
 import { measure } from './utils.mjs';
@@ -16,13 +15,8 @@ const ROUTER = aStar;
 const nVertices = (graph) => Object.keys(graph).length;
 const nEdges = (graph) => Object.keys(graph).reduce((a, p) => a + graph[p].length, 0);
 
-export function testRoute({ map, startPoint, finishPoint }) {
-    const features = map.features;
-
-    // nodes & graph are independent on start/finish, so they should be pre-generated
-    const nodes = measure(() => featuresToNodes({ features }), 'nodes()', MEASURE);
-    const graph = measure(() => featuresToWeightedGraph({ features, nodes }), 'graph()', MEASURE);
-    console.log('map nodes', nodes.length, 'vertices', nVertices(graph), 'edges', nEdges(graph));
+export function testRoute({ graph, startPoint, finishPoint }) {
+    console.log('graph vertices', nVertices(graph), 'edges', nEdges(graph));
 
     let cycle = 0;
     const avoidNodes = {};
@@ -37,7 +31,7 @@ export function testRoute({ map, startPoint, finishPoint }) {
         );
 
         const { geometry, debug } = measure(() => ROUTER({ graph, startNodeLL, finishNodeLL }), 'router()', MEASURE);
-        console.log(cycle, 'direct', !!geometry, debug);
+        console.log(cycle, 'direct', !!geometry, debug.toString());
 
         // route not found
         // try to avoid node
@@ -56,7 +50,7 @@ export function testRoute({ map, startPoint, finishPoint }) {
                     'router-reverse()',
                     MEASURE
                 );
-                console.log(cycle, 'reverse', !!geometry, debug);
+                console.log(cycle, 'reverse', !!geometry, debug.toString());
                 geometry && (alternative = geometry); // debug reverse
             }
 
@@ -77,6 +71,17 @@ export function testRoute({ map, startPoint, finishPoint }) {
     //     geometry: [],
     //     debugGeoJSON: makeGeoJSON({ points: nodes, graph: {} }),
     // };
+}
+
+export function mapToGraph(map) {
+    const features = map.features;
+
+    // nodes & graph are independent on start/finish, so they should be pre-generated
+    const nodes = measure(() => featuresToNodes({ features }), 'nodes()', MEASURE);
+    const graph = measure(() => featuresToWeightedGraph({ features, nodes }), 'graph()', MEASURE);
+    console.log('map nodes', nodes.length, 'vertices', nVertices(graph), 'edges', nEdges(graph));
+
+    return graph;
 }
 
 function makeGeoJSON({ points, alternative, graph, debugOnly = false }) {
@@ -112,7 +117,7 @@ function makeGeoJSON({ points, alternative, graph, debugOnly = false }) {
                                 [lngB, latB],
                             ],
                         },
-                        style: { weight: 1, color: 'green' },
+                        style: { weight: 1, color: 'red' },
                     });
                 }
             });

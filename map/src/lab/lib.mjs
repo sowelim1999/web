@@ -13,10 +13,14 @@ export class Node {
 
 export class Debug {
     constructor() {
+        this.started = Date.now();
         this.queued = 0;
         this.viewed = 0;
-        // points
-        // distance
+        this.distance = 0;
+    }
+    toString() {
+        const ms = Date.now() - this.started;
+        return `Debug { queued: ${this.queued}, viewed: ${this.viewed}, ms: ${ms}, distance: ${this.distance} }`;
     }
 }
 
