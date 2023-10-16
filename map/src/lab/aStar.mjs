@@ -1,15 +1,8 @@
 'use strict';
 
-import {
-    Node,
-    Debug,
-    getGeometryDistance,
-    getPathSegmentsGeometry,
-    getDistanceEuclidean,
-    getDistance,
-} from './lib.mjs';
+import { Node, Debug, getGeometryDistance, getDistanceEuclidean, getDistance } from './lib.mjs';
 
-const USE_HEURISTICS = true;
+const USE_HEURISTICS = true; // w/o heuristics, A* is just a Dijkstra limited by finish-node
 
 const FAST_HEURISTIRCS = true;
 const H = USE_HEURISTICS ? (FAST_HEURISTIRCS ? getDistanceEuclidean : getDistance) : null;
@@ -17,72 +10,67 @@ const H = USE_HEURISTICS ? (FAST_HEURISTIRCS ? getDistanceEuclidean : getDistanc
 export function aStar({ graph, startNodeLL, finishNodeLL }) {
     const debug = new Debug();
 
-    const openNodes = []; // TODO https://github.com/mourner/tinyqueue
+    const openNodes = [];
     const closedNodes = new Set();
 
     const finish = new Node(finishNodeLL);
     const start = new Node(startNodeLL);
-    start.fromStart = 0; // toEnd ?
+
+    start.g = 0;
+    start.segment = null;
     openNodes.push(start);
 
     while (openNodes.length > 0) {
-        // XXX use priority queue (binary heap) instead of sort()/push()
-        openNodes.sort((a, b) => a.toEnd - b.toEnd);
+        // sort() as priority queue
+        openNodes.sort((a, b) => a.f - b.f);
 
-        // shift the nearest node (by toEnd) and save it as closed
+        // shift node with the shortest path and save it as closed
         const current = openNodes.shift();
+
+        // add to closed nodes
         closedNodes.add(current.ll);
 
-        // finally
+        // finally, got the route
         if (current.ll === finishNodeLL) {
-            const path = [];
-
-            path.push(current);
-            let parent = current.parent;
-
-            while (parent) {
-                path.push(parent);
-                parent = parent.parent;
-            }
-
-            path.reverse();
-
-            const geometry = getPathSegmentsGeometry(path);
-
+            const geometry = current.geometry();
             debug.distance = getGeometryDistance(geometry);
-
             return { geometry, debug };
         }
 
         for (const edge of graph[current.ll] || []) {
             const edgeLL = edge.node;
-            debug.viewed++;
 
             // already closed - skip
             if (closedNodes.has(edgeLL)) {
                 continue;
             }
 
-            // search and use the found one or create a new neighbor
-            const found = openNodes.find((node) => node.ll === edgeLL); // ref
-            const neighbor = found ?? new Node(edgeLL);
+            debug.viewed++;
+            const tentativeG = current.g + edge.weight;
+            const ref = openNodes.find((node) => node.ll === edgeLL);
 
-            // check and update the shorter way
-            const preliminaryFromStart = current.fromStart + edge.weight;
-            if (preliminaryFromStart < neighbor.fromStart) {
-                neighbor.fromStart = preliminaryFromStart;
-                neighbor.toEnd = neighbor.fromStart + heuristicDistance(neighbor, finish);
-                // neighbor.parent = current; // FIXME
-            }
+            if (ref) {
+                if (tentativeG < ref.g) {
+                    // update shorter
+                    ref.g = tentativeG;
+                    ref.f = ref.g + ref.h;
+                    ref.parent = current;
+                    ref.segment = edge.segment;
+                }
+            } else {
+                // enqueue
+                const fresh = new Node(edgeLL);
+                fresh.g = tentativeG;
+                fresh.h = h(fresh, finish);
+                fresh.f = fresh.g + fresh.h;
+                fresh.parent = current;
+                fresh.segment = edge.segment;
+                openNodes.push(fresh);
 
-            // add to queue if not found
-            if (!found) {
-                edge.debug = true; // debug - modify graph - remove later
-                debug.queued++; // debug
-
-                neighbor.segment = edge.segment;
-                neighbor.parent = current;
-                openNodes.push(neighbor);
+                // debug
+                debug.enqueued++;
+                edge.debug = true;
+                openNodes.length > debug.maxqueue && (debug.maxqueue = openNodes.length);
             }
         }
     }
@@ -90,7 +78,7 @@ export function aStar({ graph, startNodeLL, finishNodeLL }) {
     return { geometry: null, debug }; // failed
 }
 
-function heuristicDistance(nodeA, nodeB) {
+function h(nodeA, nodeB) {
     if (H === null) {
         return 0;
     }
@@ -98,3 +86,29 @@ function heuristicDistance(nodeA, nodeB) {
     const [latB, lngB] = nodeB.ll.split(',');
     return H(latA, lngA, latB, lngB);
 }
+
+// /**
+//  * Performance notes:
+//  * 1) sort() + shift: OK (default)
+//  * 2) min-find + closedNodes.has() + no-remove: slow (8x worst)
+//  *
+//  * TODO: try min-find with openNodes slice
+//  * TODO: try openNodes as Set/Map hash object
+//  * TODO: try priority queue: https://github.com/mourner/tinyqueue
+//  */
+// // (1) default sort() as priority queue
+// openNodes.sort((a, b) => a.f - b.f);
+
+// // (2) slow...
+// // let min = Infinity;
+// // let current = null;
+// // openNodes.forEach((n) => {
+// //     if (n.toEnd < min && !closedNodes.has(n.ll)) {
+// //         current = n;
+// //         min = n.toEnd;
+// //     }
+// // });
+
+// // shift node with the shortest path and save it as closed
+// const current = openNodes.shift();
+// closedNodes.add(current.ll);

@@ -37,8 +37,8 @@ export function testRoute({ graph, startPoint, finishPoint }) {
         // try to avoid node
         if (geometry === null) {
             // XXX think about better way to avoid orhpans
-            debug.queued < nVertices(graph) * 0.1 && (avoidNodes[startNodeLL] = true);
-            debug.queued > nVertices(graph) * 0.9 && (avoidNodes[finishNodeLL] = true);
+            debug.enqueued < nVertices(graph) * 0.1 && (avoidNodes[startNodeLL] = true);
+            debug.enqueued > nVertices(graph) * 0.9 && (avoidNodes[finishNodeLL] = true);
             continue;
         }
 

@@ -6,21 +6,35 @@ export class Node {
     constructor(ll) {
         this.ll = ll; // node key ("lat,lng")
         this.parent = null; // parent (Node class)
-        this.fromStart = Infinity; // cummulative weight from the start (g)
-        this.toEnd = 0; // weight from the start + heuristic-to-the-end (to sort queue) (f)
+        this.segment = null; // geometry (from graph)
+        this.g = Infinity; // cost (weight sum) from start
+        this.h = 0; // heuristics
+        this.f = 0; // g + h
+    }
+    path() {
+        const nodes = [];
+        for (let next = this; next; next = next.parent) {
+            nodes.push(next);
+        }
+        nodes.reverse();
+        return nodes;
+    }
+    geometry() {
+        return getPathSegmentsGeometry(this.path());
     }
 }
 
 export class Debug {
     constructor() {
         this.started = Date.now();
-        this.queued = 0;
         this.viewed = 0;
+        this.enqueued = 0;
+        this.maxqueue = 0;
         this.distance = 0;
     }
     toString() {
         const ms = Date.now() - this.started;
-        return `Debug { queued: ${this.queued}, viewed: ${this.viewed}, ms: ${ms}, distance: ${this.distance} }`;
+        return `Debug { maxqueue: ${this.maxqueue}, enqueued: ${this.enqueued}, viewed: ${this.viewed}, ms: ${ms}, distance: ${this.distance} }`;
     }
 }
 
