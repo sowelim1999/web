@@ -3,11 +3,11 @@
 import { Node, Debug, getGeometryDistance, getDistanceEuclidean, getDistance } from './lib.mjs';
 
 const FAST_HEURISTIRCS = true;
-let H = FAST_HEURISTIRCS ? getDistanceEuclidean : getDistance;
 
 export function aStar({ graph, src, dst, avoidHeuristics = false }) {
     const debug = new Debug();
 
+    let H = FAST_HEURISTIRCS ? getDistanceEuclidean : getDistance;
     avoidHeuristics && (H = null); // without heuristics, A* is just a Dijkstra limited by finish-node
 
     const openNodes = [];
@@ -63,7 +63,7 @@ export function aStar({ graph, src, dst, avoidHeuristics = false }) {
                 // enqueue
                 const fresh = new Node(edgeLL);
                 fresh.g = tentativeG;
-                fresh.h = h(fresh, finish);
+                fresh.h = h(H, fresh, finish);
                 fresh.f = fresh.g + fresh.h;
                 fresh.parent = current;
                 fresh.segment = edge.segment;
@@ -80,7 +80,7 @@ export function aStar({ graph, src, dst, avoidHeuristics = false }) {
     return { geometry: null, debug }; // failed
 }
 
-function h(nodeA, nodeB) {
+function h(H, nodeA, nodeB) {
     if (H === null) {
         return 0;
     }
