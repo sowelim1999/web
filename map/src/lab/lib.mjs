@@ -27,14 +27,18 @@ export class Node {
 export class Debug {
     constructor() {
         this.started = Date.now();
-        this.viewed = 0;
-        this.enqueued = 0;
-        this.maxqueue = 0;
+        this.maxQueueSize = 0;
+        this.uniqueQueued = 0;
+        this.totalChecked = 0;
+        this.totalUpdated = 0;
+        this.ms = 0;
         this.distance = 0;
     }
     toString() {
-        const ms = Date.now() - this.started;
-        return `Debug { maxqueue: ${this.maxqueue}, enqueued: ${this.enqueued}, viewed: ${this.viewed}, ms: ${ms}, distance: ${this.distance} }`;
+        this.ms = Date.now() - this.started;
+        delete this.started;
+        return JSON.stringify(this).replaceAll('"', ' ').replaceAll(' :', ': ').replace('}', ' }');
+        // return `Debug { maxQueueSize: ${this.maxQueueSize}, uniqueQueued: ${this.uniqueQueued}, totalUpdated: ${this.totalUpdated}, ms: ${ms}, distance: ${this.distance} }`;
     }
 }
 

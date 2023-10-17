@@ -29,6 +29,7 @@ export function findStartFinishNodes({ graph, avoidNodes, startPoint, finishPoin
     Object.keys(graph).forEach((ll) => {
         keepStartFinishNodesCloser(ll);
         graph[ll].forEach((edge) => {
+            delete edge.debug; // reset debug
             keepStartFinishNodesCloser(edge.node);
         });
     });

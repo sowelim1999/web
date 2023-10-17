@@ -3,11 +3,11 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { testRoute, mapToGraph } from './route.mjs';
 
-// const test = '50.40498,30.61149 50.45971,30.52572'; // Kiev
+const test = '50.40498,30.61149 50.45971,30.52572'; // Kiev
 // const test = '37.80502,-122.43040 37.80083,-122.41001'; // SF
 // const test = '42.43648,1.47431 42.63151,1.48114'; // Andorra
 // const test = '43.73141,7.41888 43.74659,7.43895'; // Monaco not found
-const test = '43.74659,7.43895 43.73141,7.41888'; // Monaco not found (rev)
+// const test = '43.74659,7.43895 43.73141,7.41888'; // Monaco not found (rev)
 
 const [start, finish] = test.split(' ');
 const startPoint = { lat: start.split(',')[0], lng: start.split(',')[1] };

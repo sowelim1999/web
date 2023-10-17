@@ -2,19 +2,19 @@
 
 import { Node, Debug, getGeometryDistance, getDistanceEuclidean, getDistance } from './lib.mjs';
 
-const USE_HEURISTICS = true; // w/o heuristics, A* is just a Dijkstra limited by finish-node
-
 const FAST_HEURISTIRCS = true;
-const H = USE_HEURISTICS ? (FAST_HEURISTIRCS ? getDistanceEuclidean : getDistance) : null;
+let H = FAST_HEURISTIRCS ? getDistanceEuclidean : getDistance;
 
-export function aStar({ graph, startNodeLL, finishNodeLL }) {
+export function aStar({ graph, src, dst, avoidHeuristics = false }) {
     const debug = new Debug();
+
+    avoidHeuristics && (H = null); // without heuristics, A* is just a Dijkstra limited by finish-node
 
     const openNodes = [];
     const closedNodes = new Set();
 
-    const finish = new Node(finishNodeLL);
-    const start = new Node(startNodeLL);
+    const start = new Node(src);
+    const finish = new Node(dst);
 
     start.g = 0;
     start.segment = null;
@@ -31,7 +31,7 @@ export function aStar({ graph, startNodeLL, finishNodeLL }) {
         closedNodes.add(current.ll);
 
         // finally, got the route
-        if (current.ll === finishNodeLL) {
+        if (current.ll === dst) {
             const geometry = current.geometry();
             debug.distance = getGeometryDistance(geometry);
             return { geometry, debug };
@@ -45,12 +45,14 @@ export function aStar({ graph, startNodeLL, finishNodeLL }) {
                 continue;
             }
 
-            debug.viewed++;
             const tentativeG = current.g + edge.weight;
             const ref = openNodes.find((node) => node.ll === edgeLL);
 
+            debug.totalChecked++;
+
             if (ref) {
                 if (tentativeG < ref.g) {
+                    debug.totalUpdated++;
                     // update shorter
                     ref.g = tentativeG;
                     ref.f = ref.g + ref.h;
@@ -68,9 +70,9 @@ export function aStar({ graph, startNodeLL, finishNodeLL }) {
                 openNodes.push(fresh);
 
                 // debug
-                debug.enqueued++;
                 edge.debug = true;
-                openNodes.length > debug.maxqueue && (debug.maxqueue = openNodes.length);
+                debug.uniqueQueued++;
+                openNodes.length > debug.maxQueueSize && (debug.maxQueueSize = openNodes.length);
             }
         }
     }

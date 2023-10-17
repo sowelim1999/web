@@ -1,7 +1,6 @@
 'use strict';
 
 const MEASURE = 0;
-const TEST_REVERSE = true;
 
 import { measure } from './utils.mjs';
 
@@ -9,8 +8,6 @@ import { aStar } from './aStar.mjs';
 import { featuresToNodes } from './featuresToNodes.mjs';
 import { featuresToWeightedGraph } from './featuresToWeightedGraph.mjs';
 import { findStartFinishNodes } from './findStartFinishNodes.mjs';
-
-const ROUTER = aStar;
 
 const nVertices = (graph) => Object.keys(graph).length;
 const nEdges = (graph) => Object.keys(graph).reduce((a, p) => a + graph[p].length, 0);
@@ -30,8 +27,25 @@ export function testRoute({ graph, startPoint, finishPoint }) {
             MEASURE
         );
 
-        const { geometry, debug } = measure(() => ROUTER({ graph, startNodeLL, finishNodeLL }), 'router()', MEASURE);
-        console.log(cycle, 'direct', !!geometry, debug.toString());
+        const ROUTERS = [
+            { name: 'A* direct', f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL }) },
+            { name: 'A* reverse', f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL }) },
+            {
+                name: 'Dijkstra direct',
+                f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
+            },
+            {
+                name: 'Dijkstra reverse',
+                f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL, avoidHeuristics: true }),
+            },
+        ];
+
+        let geometry, debug;
+
+        ROUTERS.forEach(({ name, f }) => {
+            ({ geometry, debug } = measure(f, name, MEASURE));
+            console.log(cycle, name, !!geometry, debug.toString());
+        });
 
         // route not found
         // try to avoid node
@@ -44,15 +58,15 @@ export function testRoute({ graph, startPoint, finishPoint }) {
 
         if (geometry) {
             let alternative = null; // geometry
-            if (TEST_REVERSE) {
-                const { geometry, debug } = measure(
-                    () => ROUTER({ graph, startNodeLL: finishNodeLL, finishNodeLL: startNodeLL }),
-                    'router-reverse()',
-                    MEASURE
-                );
-                console.log(cycle, 'reverse', !!geometry, debug.toString());
-                geometry && (alternative = geometry); // debug reverse
-            }
+            // if (TEST_REVERSE) {
+            //     const { geometry, debug } = measure(
+            //         () => ROUTER({ graph, startNodeLL: finishNodeLL, finishNodeLL: startNodeLL }),
+            //         'router-reverse()',
+            //         MEASURE
+            //     );
+            //     console.log(cycle, 'reverse', !!geometry, debug.toString());
+            //     geometry && (alternative = geometry); // debug reverse
+            // }
 
             return {
                 geometry, // geometry of the route
