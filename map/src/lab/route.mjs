@@ -5,6 +5,7 @@ const MEASURE = 0;
 import { measure } from './utils.mjs';
 
 import { aStar } from './aStar.mjs';
+import { aStarBi } from './aStarBi.mjs';
 import { featuresToNodes } from './featuresToNodes.mjs';
 import { featuresToWeightedGraph } from './featuresToWeightedGraph.mjs';
 import { findStartFinishNodes } from './findStartFinishNodes.mjs';
@@ -29,31 +30,49 @@ export function testRoute({ graph, startPoint, finishPoint }) {
 
         const ROUTERS = [
             { name: 'A* direct', f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL }) },
-            { name: 'A* reverse', f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL }) },
+            { name: 'A* reverse', reversed: true, f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL }) },
+            { name: 'A* Two-Way', f: () => aStarBi({ graph, src: startNodeLL, dst: finishNodeLL }) },
             {
                 name: 'Dijkstra direct',
                 f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
             },
             {
                 name: 'Dijkstra reverse',
+                reversed: true,
                 f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL, avoidHeuristics: true }),
+            },
+            {
+                name: 'Dijkstra Two-Way',
+                f: () => aStarBi({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
             },
         ];
 
-        let geometry, debug;
+        let geometry, failedAtStart, failedAtFinish, debug, debugA, debugB;
 
-        ROUTERS.forEach(({ name, f }) => {
-            ({ geometry, debug } = measure(f, name, MEASURE));
+        for (const { name, f, reversed } of ROUTERS) {
+            ({ geometry, failedAtStart, failedAtFinish, debug, debugA, debugB } = measure(f, name, MEASURE));
             console.log(cycle, name, !!geometry, debug.toString());
-        });
+            (failedAtStart || debugA?.distance > 0) && console.log(cycle, name, !!geometry, debugA.toString(), '(A)');
+            (failedAtFinish || debugB?.distance > 0) && console.log(cycle, name, !!geometry, debugB.toString(), '(B)');
 
-        // route not found
-        // try to avoid node
-        if (geometry === null) {
-            // XXX think about better way to avoid orhpans
-            debug.enqueued < nVertices(graph) * 0.1 && (avoidNodes[startNodeLL] = true);
-            debug.enqueued > nVertices(graph) * 0.9 && (avoidNodes[finishNodeLL] = true);
-            continue;
+            // route not found
+            // try to avoid node
+            if (geometry === null) {
+                const n = nVertices(graph);
+                const q = debug.uniqueQueued || Infinity;
+
+                if (failedAtStart) {
+                    avoidNodes[startNodeLL] = true;
+                } else if (failedAtFinish) {
+                    avoidNodes[finishNodeLL] = true;
+                } else if (q < n * 0.1) {
+                    avoidNodes[reversed ? finishNodeLL : startNodeLL] = true;
+                } else if (q > n * 0.9) {
+                    avoidNodes[reversed ? startNodeLL : finishNodeLL] = true;
+                }
+
+                continue;
+            }
         }
 
         if (geometry) {
