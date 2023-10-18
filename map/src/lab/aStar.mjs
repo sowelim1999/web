@@ -34,7 +34,7 @@ export function aStar({ graph, src, dst, avoidHeuristics = false }) {
         if (current.ll === dst) {
             const geometry = current.geometry();
             debug.distance = getGeometryDistance(geometry);
-            debug.points = geometry.length;
+            // debug.points = geometry.length;
             return { geometry, debug };
         }
 
@@ -59,7 +59,7 @@ export function aStar({ graph, src, dst, avoidHeuristics = false }) {
                     ref.parent = current;
                     ref.segment = edge.segment;
 
-                    debug.totalUpdated++; // debug
+                    // debug.totalUpdated++; // debug
                 }
             } else {
                 // enqueue

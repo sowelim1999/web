@@ -2,83 +2,104 @@
 
 import { Node, Debug, getGeometryDistance, getDistanceEuclidean } from './lib.mjs';
 
+/**
+ * aStarBi (BA*) simple Bidirectional A* (search the shortest path in the graph)
+ *
+ * @param graph <Object> Undirected Weighted Graph from featuresToWeightedGraph()
+ * @param src, dst <String> Start/Finish nodes in LL format: "lat,lng"
+ * @param avoidHeuristics <Bool> when true, BA* acts as BI-Dijkstra
+ *
+ * @return { failedAtStart } <Bool> route failed because start is deadlocked
+ * @return { failedAtFinish } <Bool> route failed because finish is deadlocked
+ * @return { geometry } <Array> geometry of route (stored in graph, compiled by path)
+ *
+ * @return { debug } <JSON> debug values and statistics (see lib/class Debug)
+ * @return { alternative } <Array> optional alternative geometry for debug purposes
+ *
+ * How the meet-in-the-middle works:
+ *
+ * 1) collect unique `middleCandidates` on every meet-point (cost as key)
+ * 2) when `minCandidates` collected, finish the route by the best of them
+ *
+ * Note:
+ * ...A variables are related to Forward search (src to dst)
+ * ...B variables are related to Backward search (dst to src)
+ */
 export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
-    // const isDijkstra = !!avoidHeuristics;
+    const H = avoidHeuristics ? null : getDistanceEuclidean; // avoidHeuristics = true = Dijkstra
 
-    const H = avoidHeuristics ? null : getDistanceEuclidean;
+    const middleCandidates = new Map();
+    const minCandidates = 10; // 5 is not enough, but 10 sometimes too
 
-    const debugA = new Debug();
-    const debugB = new Debug();
     const debug = new Debug(); // summarized debug for A+B
 
     const openA = [];
     const openB = [];
-
-    const closedA = new Set();
-    const closedB = new Set();
-
+    const closedA = new Map();
+    const closedB = new Map();
     const finishA = new Node(dst);
     const finishB = new Node(src);
-
-    const startA = new Node(src);
-    const startB = new Node(dst);
-    startA.g = 0;
-    startB.g = 0;
-    startA.segment = null;
-    startB.segment = null;
-    openA.push(startA);
-    openB.push(startB);
+    openA.push(new Node(src, { g: 0 }));
+    openB.push(new Node(dst, { g: 0 }));
 
     for (;;) {
         let currentA = null;
         let currentB = null;
 
-        // queue out A/B nodes
-        if (openA.length > 0) {
+        // queue out A/B
+        // (tried balancing but failed)
+        const fetchA = openA.length > 0;
+        const fetchB = openB.length > 0;
+        // const fetchA = openA.length > 0 && (openB.length === 0 || openA.length <= openB.length); // failed
+        // const fetchB = openB.length > 0 && (openA.length === 0 || openB.length < openA.length); // failed
+        // const fetchA = openA.length > 0 && debugA.totalChecked <= debugB.totalChecked; // failed
+        // const fetchB = openB.length > 0 && debugB.totalChecked < debugA.totalChecked; // failed
+        if (fetchA) {
             openA.sort((a, b) => a.f - b.f);
             currentA = openA.shift();
-            closedA.add(currentA.ll);
+            closedA.set(currentA.ll, currentA);
         }
-        if (openB.length > 0) {
+        if (fetchB) {
             openB.sort((a, b) => a.f - b.f);
             currentB = openB.shift();
-            closedB.add(currentB.ll);
+            closedB.set(currentB.ll, currentB);
         }
 
         // meet-in-the-middle
-        if (currentA && currentB) {
-            const foundForA = openB.find((node) => node.ll === currentA.ll);
-            if (foundForA) {
-                const geometry = currentA.geometry();
-                const alternative = foundForA.geometry();
-                debugA.distance = getGeometryDistance(geometry);
-                debugB.distance = getGeometryDistance(alternative);
-                debug.distance = debugA.distance + debugB.distance;
-                return { geometry, alternative, debug, debugA, debugB };
-            }
-            const foundForB = openA.find((node) => node.ll === currentB.ll);
-            if (foundForB) {
-                const geometry = currentB.geometry();
-                const alternative = foundForB.geometry();
-                debugB.distance = getGeometryDistance(geometry);
-                debugA.distance = getGeometryDistance(alternative);
-                debug.distance = debugA.distance + debugB.distance;
-                return { geometry, alternative, debug, debugA, debugB };
+        const meetForA = currentA && closedB.get(currentA.ll);
+        const meetForB = currentB && closedA.get(currentB.ll);
+        if (meetForA) {
+            const cost = currentA.g + meetForA.g;
+            middleCandidates.set(cost, { A: currentA, B: meetForA });
+        }
+        if (meetForB) {
+            const cost = currentB.g + meetForB.g;
+            middleCandidates.set(cost, { A: currentB, B: meetForB });
+        }
+        if (meetForA || meetForB) {
+            if (middleCandidates.size >= minCandidates) {
+                const min = [...middleCandidates.keys()].sort((a, b) => a - b)[0];
+                const { A, B } = middleCandidates.get(min);
+                const geometry = A.geometry();
+                const alternative = B.geometry();
+                // debug.points = geometry.length + alternative.length;
+                debug.distance = getGeometryDistance(geometry) + getGeometryDistance(alternative);
+                return { geometry, alternative, debug };
             }
         }
 
-        // check is finished A/B nodes
+        // check finished (but A/B have never met)
         if (currentA && currentA.ll === finishA.ll) {
             const geometry = currentA.geometry();
+            // debug.points = geometry.length;
             debug.distance = getGeometryDistance(geometry);
-            debugA.distance = debug.distance;
-            return { geometry, debug, debugA, debugB };
+            return { geometry, debug };
         }
         if (currentB && currentB.ll === finishB.ll) {
             const geometry = currentB.geometry();
+            // debug.points = geometry.length;
             debug.distance = getGeometryDistance(geometry);
-            debugB.distance = debug.distance;
-            return { geometry, debug, debugA, debugB };
+            return { geometry, debug };
         }
 
         // A-edges
@@ -95,12 +116,10 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
                 const ref = openA.find((node) => node.ll === edgeLL);
 
                 debug.totalChecked++;
-                debugA.totalChecked++;
 
                 if (ref) {
                     if (tentativeG < ref.g) {
-                        debug.totalUpdated++;
-                        debugA.totalUpdated++;
+                        // debug.totalUpdated++;
                         // update shorter
                         ref.g = tentativeG;
                         ref.f = ref.g + ref.h;
@@ -120,8 +139,6 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
                     // debug
                     edge.debug = true;
                     debug.uniqueQueued++;
-                    debugA.uniqueQueued++;
-                    openA.length > debugA.maxQueueSize && (debugA.maxQueueSize = openA.length);
                     openA.length + openB.length > debug.maxQueueSize &&
                         (debug.maxQueueSize = openA.length + openB.length);
                 }
@@ -142,12 +159,10 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
                 const ref = openB.find((node) => node.ll === edgeLL);
 
                 debug.totalChecked++;
-                debugB.totalChecked++;
 
                 if (ref) {
                     if (tentativeG < ref.g) {
-                        debug.totalUpdated++;
-                        debugB.totalUpdated++;
+                        // debug.totalUpdated++;
                         // update shorter
                         ref.g = tentativeG;
                         ref.f = ref.g + ref.h;
@@ -167,23 +182,22 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
                     // debug
                     edge.debug = true;
                     debug.uniqueQueued++;
-                    debugB.uniqueQueued++;
-                    openB.length > debugB.maxQueueSize && (debugB.maxQueueSize = openB.length);
                     openA.length + openB.length > debug.maxQueueSize &&
                         (debug.maxQueueSize = openA.length + openB.length);
                 }
             }
         }
 
-        if (openA.length === 0) {
-            return { geometry: null, failedAtStart: true, debug, debugA, debugB };
-        }
-
-        if (openB.length === 0) {
-            return { geometry: null, failedAtFinish: true, debug, debugA, debugB };
+        // finally failed
+        if (openA.length === 0 || openB.length === 0) {
+            return {
+                failedAtStart: openA.length === 0,
+                failedAtFinish: openB.length === 0,
+                geometry: null,
+                debug,
+            };
         }
     }
-    // return { geometry: null, debug, debugA, debugB }; // failed at all
 }
 
 function h(H, nodeA, nodeB) {
