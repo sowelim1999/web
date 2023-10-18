@@ -13,25 +13,28 @@ import { findStartFinishNodes } from './findStartFinishNodes.mjs';
 const nVertices = (graph) => Object.keys(graph).length;
 const nEdges = (graph) => Object.keys(graph).reduce((a, p) => a + graph[p].length, 0);
 
-export function testRoute({ graph, startPoint, finishPoint }) {
+export function testRoute({ graph, startPoint, finishPoint, web = false }) {
     console.log('graph vertices', nVertices(graph), 'edges', nEdges(graph));
 
     let cycle = 0;
     const avoidNodes = {};
 
+    const uniqueDistances = {}; // just to colorize when routers return different distances
+
     for (;;) {
         cycle++;
 
-        const { startNodeLL, finishNodeLL } = measure(
-            () => findStartFinishNodes({ graph, avoidNodes, startPoint, finishPoint }),
-            'find()',
-            MEASURE
-        );
+        let startNodeLL, finishNodeLL;
+
+        if (web === false) {
+            ({ startNodeLL, finishNodeLL } = measure(
+                () => findStartFinishNodes({ graph, avoidNodes, startPoint, finishPoint }),
+                'find()',
+                MEASURE
+            ));
+        }
 
         const ROUTERS = [
-            { name: 'A* direct', f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL }) },
-            { name: 'A* reverse', reversed: true, f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL }) },
-            { name: 'A* Two-Way', f: () => aStarBi({ graph, src: startNodeLL, dst: finishNodeLL }) },
             {
                 name: 'Dijkstra direct',
                 f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
@@ -45,19 +48,26 @@ export function testRoute({ graph, startPoint, finishPoint }) {
                 name: 'Dijkstra Two-Way',
                 f: () => aStarBi({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
             },
+            { name: 'A* direct', f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL }) },
+            { name: 'A* reverse', reversed: true, f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL }) },
+            { name: 'A* Two-Way', f: () => aStarBi({ graph, src: startNodeLL, dst: finishNodeLL }) },
         ];
 
-        let geometry, alternative, failedAtStart, failedAtFinish, debug, debugA, debugB;
+        let geometry, alternative, failedAtStart, failedAtFinish, debug;
 
         for (const { name, f, reversed } of ROUTERS) {
-            ({ geometry, alternative, failedAtStart, failedAtFinish, debug, debugA, debugB } = measure(
-                f,
-                name,
-                MEASURE
-            ));
+            if (web === true) {
+                // for web, every cycle call find to cleanup graph.edge.debug (just for debug)
+                ({ startNodeLL, finishNodeLL } = measure(
+                    () => findStartFinishNodes({ graph, avoidNodes, startPoint, finishPoint }),
+                    'find()',
+                    MEASURE
+                ));
+            }
+
+            ({ geometry, alternative, failedAtStart, failedAtFinish, debug } = measure(f, name, MEASURE));
             console.log(cycle, name, !!geometry, debug.toString());
-            (failedAtStart || debugA?.distance > 0) && console.log(cycle, name, !!geometry, debugA.toString(), '(A)');
-            (failedAtFinish || debugB?.distance > 0) && console.log(cycle, name, !!geometry, debugB.toString(), '(B)');
+            uniqueDistances[debug.distance.toFixed(0)] = true;
 
             // route not found
             // try to avoid node
@@ -87,6 +97,7 @@ export function testRoute({ graph, startPoint, finishPoint }) {
                     debugOnly: true, // show only queued (debug)
                     alternative: alternative ?? null, // show alternative geometry (debug)
                     points: [startNodeLL, finishNodeLL], // show start/finish points (debug)
+                    uniqueDistances, // debug (red color if more than 1 unique distance found)
                 }),
             };
         }
@@ -110,8 +121,10 @@ export function mapToGraph(map) {
     return graph;
 }
 
-function makeGeoJSON({ points, alternative, graph, debugOnly = false }) {
+function makeGeoJSON({ points, alternative, graph, debugOnly = false, uniqueDistances }) {
     const features = [];
+
+    const fault = Object.keys(uniqueDistances).length > 1;
 
     points &&
         points.forEach((ll) => {
@@ -143,7 +156,7 @@ function makeGeoJSON({ points, alternative, graph, debugOnly = false }) {
                                 [lngB, latB],
                             ],
                         },
-                        style: { weight: 1, color: 'green' },
+                        style: { weight: 1, color: fault ? 'red' : 'green' },
                     });
                 }
             });
@@ -156,7 +169,7 @@ function makeGeoJSON({ points, alternative, graph, debugOnly = false }) {
                 type: 'LineString',
                 coordinates: alternative,
             },
-            style: { weight: 3, color: 'red' },
+            style: { weight: 3, color: 'blue' },
         });
 
     return {

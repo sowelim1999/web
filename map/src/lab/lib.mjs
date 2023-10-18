@@ -3,11 +3,11 @@
 export const LL_ROUND = 5; // [lat,lng].toFixed() as a node key (LL_ROUND = 5 = ~1m)
 
 export class Node {
-    constructor(ll) {
+    constructor(ll, { g = Infinity } = {}) {
         this.ll = ll; // node key ("lat,lng")
         this.parent = null; // parent (Node class)
         this.segment = null; // geometry (from graph)
-        this.g = Infinity; // cost (weight sum) from start
+        this.g = g; // cost (sum of weights) from start
         this.h = 0; // heuristics
         this.f = 0; // g + h
     }
@@ -30,10 +30,10 @@ export class Debug {
         this.maxQueueSize = 0;
         this.uniqueQueued = 0;
         this.totalChecked = 0;
-        this.totalUpdated = 0;
-        this.ms = 0;
-        this.points = 0;
+        // this.totalUpdated = 0;
+        // this.points = 0;
         this.distance = 0;
+        this.ms = 0;
     }
     toString() {
         this.ms = Date.now() - this.started;
@@ -74,8 +74,8 @@ export function getGeometryDistance(points) {
         }
     }
 
-    // return distance;
-    return Math.round(distance);
+    // return Math.round(distance);
+    return Number(distance.toFixed(2));
 }
 
 export function getPathSegmentsGeometry(path) {
