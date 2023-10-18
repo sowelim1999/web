@@ -32,6 +32,7 @@ export class Debug {
         this.totalChecked = 0;
         this.totalUpdated = 0;
         this.ms = 0;
+        this.points = 0;
         this.distance = 0;
     }
     toString() {
@@ -73,6 +74,7 @@ export function getGeometryDistance(points) {
         }
     }
 
+    // return distance;
     return Math.round(distance);
 }
 

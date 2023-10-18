@@ -32,19 +32,19 @@ export function testRoute({ graph, startPoint, finishPoint }) {
             { name: 'A* direct', f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL }) },
             { name: 'A* reverse', reversed: true, f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL }) },
             { name: 'A* Two-Way', f: () => aStarBi({ graph, src: startNodeLL, dst: finishNodeLL }) },
-            // {
-            //     name: 'Dijkstra direct',
-            //     f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
-            // },
-            // {
-            //     name: 'Dijkstra reverse',
-            //     reversed: true,
-            //     f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL, avoidHeuristics: true }),
-            // },
-            // {
-            //     name: 'Dijkstra Two-Way',
-            //     f: () => aStarBi({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
-            // },
+            {
+                name: 'Dijkstra direct',
+                f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
+            },
+            {
+                name: 'Dijkstra reverse',
+                reversed: true,
+                f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL, avoidHeuristics: true }),
+            },
+            {
+                name: 'Dijkstra Two-Way',
+                f: () => aStarBi({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
+            },
         ];
 
         let geometry, alternative, failedAtStart, failedAtFinish, debug, debugA, debugB;
@@ -66,13 +66,13 @@ export function testRoute({ graph, startPoint, finishPoint }) {
                 const q = debug.uniqueQueued || Infinity;
 
                 if (failedAtStart) {
-                    avoidNodes[startNodeLL] = true;
+                    avoidNodes[startNodeLL] = true; // aStarBi() failed
                 } else if (failedAtFinish) {
-                    avoidNodes[finishNodeLL] = true;
+                    avoidNodes[finishNodeLL] = true; // aStarBi() failed
                 } else if (q < n * 0.1) {
-                    avoidNodes[reversed ? finishNodeLL : startNodeLL] = true;
+                    avoidNodes[reversed ? finishNodeLL : startNodeLL] = true; // aStar() assume start failed
                 } else if (q > n * 0.9) {
-                    avoidNodes[reversed ? startNodeLL : finishNodeLL] = true;
+                    avoidNodes[reversed ? startNodeLL : finishNodeLL] = true; // aStar() assume finish failed
                 }
 
                 continue;

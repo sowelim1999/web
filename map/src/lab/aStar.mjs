@@ -8,7 +8,7 @@ export function aStar({ graph, src, dst, avoidHeuristics = false }) {
     const debug = new Debug();
 
     let H = FAST_HEURISTIRCS ? getDistanceEuclidean : getDistance;
-    avoidHeuristics && (H = null); // without heuristics, A* is just a Dijkstra limited by finish-node
+    avoidHeuristics && (H = null); // A* without heuristics is just a Dijkstra (limited by finish-node)
 
     const openNodes = [];
     const closedNodes = new Set();
@@ -34,6 +34,7 @@ export function aStar({ graph, src, dst, avoidHeuristics = false }) {
         if (current.ll === dst) {
             const geometry = current.geometry();
             debug.distance = getGeometryDistance(geometry);
+            debug.points = geometry.length;
             return { geometry, debug };
         }
 
@@ -48,16 +49,17 @@ export function aStar({ graph, src, dst, avoidHeuristics = false }) {
             const tentativeG = current.g + edge.weight;
             const ref = openNodes.find((node) => node.ll === edgeLL);
 
-            debug.totalChecked++;
+            debug.totalChecked++; // debug
 
             if (ref) {
                 if (tentativeG < ref.g) {
-                    debug.totalUpdated++;
                     // update shorter
                     ref.g = tentativeG;
                     ref.f = ref.g + ref.h;
                     ref.parent = current;
                     ref.segment = edge.segment;
+
+                    debug.totalUpdated++; // debug
                 }
             } else {
                 // enqueue
