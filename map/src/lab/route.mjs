@@ -32,25 +32,29 @@ export function testRoute({ graph, startPoint, finishPoint }) {
             { name: 'A* direct', f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL }) },
             { name: 'A* reverse', reversed: true, f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL }) },
             { name: 'A* Two-Way', f: () => aStarBi({ graph, src: startNodeLL, dst: finishNodeLL }) },
-            {
-                name: 'Dijkstra direct',
-                f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
-            },
-            {
-                name: 'Dijkstra reverse',
-                reversed: true,
-                f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL, avoidHeuristics: true }),
-            },
-            {
-                name: 'Dijkstra Two-Way',
-                f: () => aStarBi({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
-            },
+            // {
+            //     name: 'Dijkstra direct',
+            //     f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
+            // },
+            // {
+            //     name: 'Dijkstra reverse',
+            //     reversed: true,
+            //     f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL, avoidHeuristics: true }),
+            // },
+            // {
+            //     name: 'Dijkstra Two-Way',
+            //     f: () => aStarBi({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
+            // },
         ];
 
-        let geometry, failedAtStart, failedAtFinish, debug, debugA, debugB;
+        let geometry, alternative, failedAtStart, failedAtFinish, debug, debugA, debugB;
 
         for (const { name, f, reversed } of ROUTERS) {
-            ({ geometry, failedAtStart, failedAtFinish, debug, debugA, debugB } = measure(f, name, MEASURE));
+            ({ geometry, alternative, failedAtStart, failedAtFinish, debug, debugA, debugB } = measure(
+                f,
+                name,
+                MEASURE
+            ));
             console.log(cycle, name, !!geometry, debug.toString());
             (failedAtStart || debugA?.distance > 0) && console.log(cycle, name, !!geometry, debugA.toString(), '(A)');
             (failedAtFinish || debugB?.distance > 0) && console.log(cycle, name, !!geometry, debugB.toString(), '(B)');
@@ -76,23 +80,12 @@ export function testRoute({ graph, startPoint, finishPoint }) {
         }
 
         if (geometry) {
-            let alternative = null; // geometry
-            // if (TEST_REVERSE) {
-            //     const { geometry, debug } = measure(
-            //         () => ROUTER({ graph, startNodeLL: finishNodeLL, finishNodeLL: startNodeLL }),
-            //         'router-reverse()',
-            //         MEASURE
-            //     );
-            //     console.log(cycle, 'reverse', !!geometry, debug.toString());
-            //     geometry && (alternative = geometry); // debug reverse
-            // }
-
             return {
                 geometry, // geometry of the route
                 debugGeoJSON: makeGeoJSON({
                     graph, // show graph (debug)
                     debugOnly: true, // show only queued (debug)
-                    alternative, // show alternative geometry (debug)
+                    alternative: alternative ?? null, // show alternative geometry (debug)
                     points: [startNodeLL, finishNodeLL], // show start/finish points (debug)
                 }),
             };
@@ -150,7 +143,7 @@ function makeGeoJSON({ points, alternative, graph, debugOnly = false }) {
                                 [lngB, latB],
                             ],
                         },
-                        style: { weight: 1, color: 'red' },
+                        style: { weight: 1, color: 'green' },
                     });
                 }
             });
@@ -163,7 +156,7 @@ function makeGeoJSON({ points, alternative, graph, debugOnly = false }) {
                 type: 'LineString',
                 coordinates: alternative,
             },
-            style: { weight: 3, color: 'blue' },
+            style: { weight: 3, color: 'red' },
         });
 
     return {

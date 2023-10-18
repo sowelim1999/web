@@ -3,9 +3,9 @@
 import { Node, Debug, getGeometryDistance, getDistanceEuclidean } from './lib.mjs';
 
 export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
-    const H = avoidHeuristics ? null : getDistanceEuclidean;
-
     // const isDijkstra = !!avoidHeuristics;
+
+    const H = avoidHeuristics ? null : getDistanceEuclidean;
 
     const debugA = new Debug();
     const debugB = new Debug();
@@ -30,20 +30,60 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
     openB.push(startB);
 
     for (;;) {
+        let currentA = null;
+        let currentB = null;
+
+        // queue out A/B nodes
         if (openA.length > 0) {
             openA.sort((a, b) => a.f - b.f);
+            currentA = openA.shift();
+            closedA.add(currentA.ll);
+        }
+        if (openB.length > 0) {
+            openB.sort((a, b) => a.f - b.f);
+            currentB = openB.shift();
+            closedB.add(currentB.ll);
+        }
 
-            const current = openA.shift();
-            closedA.add(current.ll);
-
-            if (current.ll === finishA.ll) {
-                const geometry = current.geometry();
-                debug.distance = getGeometryDistance(geometry);
-                debugA.distance = debug.distance;
-                return { geometry, debug, debugA, debugB };
+        // meet-in-the-middle
+        if (currentA && currentB) {
+            const foundForA = openB.find((node) => node.ll === currentA.ll);
+            if (foundForA) {
+                const geometry = currentA.geometry();
+                const alternative = foundForA.geometry();
+                debugA.distance = getGeometryDistance(geometry);
+                debugB.distance = getGeometryDistance(alternative);
+                debug.distance = debugA.distance + debugB.distance;
+                return { geometry, alternative, debug, debugA, debugB };
             }
+            const foundForB = openA.find((node) => node.ll === currentB.ll);
+            if (foundForB) {
+                const geometry = currentB.geometry();
+                const alternative = foundForB.geometry();
+                debugB.distance = getGeometryDistance(geometry);
+                debugA.distance = getGeometryDistance(alternative);
+                debug.distance = debugA.distance + debugB.distance;
+                return { geometry, alternative, debug, debugA, debugB };
+            }
+        }
 
-            for (const edge of graph[current.ll] || []) {
+        // check is finished A/B nodes
+        if (currentA && currentA.ll === finishA.ll) {
+            const geometry = currentA.geometry();
+            debug.distance = getGeometryDistance(geometry);
+            debugA.distance = debug.distance;
+            return { geometry, debug, debugA, debugB };
+        }
+        if (currentB && currentB.ll === finishB.ll) {
+            const geometry = currentB.geometry();
+            debug.distance = getGeometryDistance(geometry);
+            debugB.distance = debug.distance;
+            return { geometry, debug, debugA, debugB };
+        }
+
+        // A-edges
+        if (currentA) {
+            for (const edge of graph[currentA.ll] || []) {
                 const edgeLL = edge.node;
 
                 // already closed - skip
@@ -51,7 +91,7 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
                     continue;
                 }
 
-                const tentativeG = current.g + edge.weight;
+                const tentativeG = currentA.g + edge.weight;
                 const ref = openA.find((node) => node.ll === edgeLL);
 
                 debug.totalChecked++;
@@ -64,7 +104,7 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
                         // update shorter
                         ref.g = tentativeG;
                         ref.f = ref.g + ref.h;
-                        ref.parent = current;
+                        ref.parent = currentA;
                         ref.segment = edge.segment;
                     }
                 } else {
@@ -73,7 +113,7 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
                     fresh.g = tentativeG;
                     fresh.h = H ? h(H, fresh, finishA) : 0;
                     fresh.f = fresh.g + fresh.h;
-                    fresh.parent = current;
+                    fresh.parent = currentA;
                     fresh.segment = edge.segment;
                     openA.push(fresh);
 
@@ -88,20 +128,9 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
             }
         }
 
-        if (openB.length > 0) {
-            openB.sort((a, b) => a.f - b.f);
-
-            const current = openB.shift();
-            closedB.add(current.ll);
-
-            if (current.ll === finishB.ll) {
-                const geometry = current.geometry();
-                debug.distance = getGeometryDistance(geometry);
-                debugB.distance = debug.distance;
-                return { geometry, debug, debugA, debugB };
-            }
-
-            for (const edge of graph[current.ll] || []) {
+        // B-edges
+        if (currentB) {
+            for (const edge of graph[currentB.ll] || []) {
                 const edgeLL = edge.node;
 
                 // already closed - skip
@@ -109,7 +138,7 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
                     continue;
                 }
 
-                const tentativeG = current.g + edge.weight;
+                const tentativeG = currentB.g + edge.weight;
                 const ref = openB.find((node) => node.ll === edgeLL);
 
                 debug.totalChecked++;
@@ -122,7 +151,7 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
                         // update shorter
                         ref.g = tentativeG;
                         ref.f = ref.g + ref.h;
-                        ref.parent = current;
+                        ref.parent = currentB;
                         ref.segment = edge.segment;
                     }
                 } else {
@@ -131,7 +160,7 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
                     fresh.g = tentativeG;
                     fresh.h = H ? h(H, fresh, finishB) : 0;
                     fresh.f = fresh.g + fresh.h;
-                    fresh.parent = current;
+                    fresh.parent = currentB;
                     fresh.segment = edge.segment;
                     openB.push(fresh);
 
