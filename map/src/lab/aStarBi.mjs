@@ -16,11 +16,6 @@ import { Node, Debug, getGeometryDistance, getDistanceEuclidean } from './lib.mj
  * @return { debug } <JSON> debug values and statistics (see lib/class Debug)
  * @return { alternative } <Array> optional alternative geometry for debug purposes
  *
- * How the meet-in-the-middle works:
- *
- * 1) collect unique `middleCandidates` on every meet-point (cost as key)
- * 2) when `minCandidates` collected, finish the route by the best of them
- *
  * Note:
  * ...A variables are related to Forward search (src to dst)
  * ...B variables are related to Backward search (dst to src)
@@ -28,8 +23,16 @@ import { Node, Debug, getGeometryDistance, getDistanceEuclidean } from './lib.mj
 export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
     const H = avoidHeuristics ? null : getDistanceEuclidean; // avoidHeuristics = true = Dijkstra
 
-    const middleCandidates = new Map();
-    const minCandidates = 10; // 5 is not enough, but 10 sometimes too
+    // Bi-A* meet method (increase search space)
+    // reduce heuristics influence after the meet
+    let meetOccured = false;
+    const meetHeuristicsFactor = 0.75;
+    const sorter = (a, b) =>
+        meetOccured ? a.g + a.h * meetHeuristicsFactor - (b.g + b.h * meetHeuristicsFactor) : a.f - b.f;
+
+    // Bi-Dijkstra meet based on Matthew Towers article (University College London)
+    // https://www.homepages.ucl.ac.uk/~ucahmto/math/2020/05/30/bidirectional-dijkstra.html
+    let middleMinimum = { g: Infinity, A: null, B: null };
 
     const debug = new Debug(); // summarized debug for A+B
 
@@ -48,47 +51,35 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
 
         // queue out A/B
         // (tried balancing but failed)
+        // TODO try balancing based on cost
         const fetchA = openA.length > 0;
         const fetchB = openB.length > 0;
         // const fetchA = openA.length > 0 && (openB.length === 0 || openA.length <= openB.length); // failed
         // const fetchB = openB.length > 0 && (openA.length === 0 || openB.length < openA.length); // failed
         // const fetchA = openA.length > 0 && debugA.totalChecked <= debugB.totalChecked; // failed
-        // const fetchB = openB.length > 0 && debugB.totalChecked < debugA.totalChecked; // failed
+        // const fetchB(a, b) => a.f - b.fnB.length > 0 && debugB.totalChecked < debugA.totalChecked; // failed
         if (fetchA) {
-            openA.sort((a, b) => a.f - b.f);
+            openA.sort(sorter);
             currentA = openA.shift();
             closedA.set(currentA.ll, currentA);
         }
         if (fetchB) {
-            openB.sort((a, b) => a.f - b.f);
+            openB.sort(sorter);
             currentB = openB.shift();
             closedB.set(currentB.ll, currentB);
         }
 
-        // meet-in-the-middle
-        const meetForA = currentA && closedB.get(currentA.ll);
-        const meetForB = currentB && closedA.get(currentB.ll);
-        if (meetForA) {
-            const cost = currentA.g + meetForA.g;
-            middleCandidates.set(cost, { A: currentA, B: meetForA });
-        }
-        if (meetForB) {
-            const cost = currentB.g + meetForB.g;
-            middleCandidates.set(cost, { A: currentB, B: meetForB });
-        }
-        if (meetForA || meetForB) {
-            if (middleCandidates.size >= minCandidates) {
-                const min = [...middleCandidates.keys()].sort((a, b) => a - b)[0];
-                const { A, B } = middleCandidates.get(min);
-                const geometry = A.geometry();
-                const alternative = B.geometry();
-                // debug.points = geometry.length + alternative.length;
-                debug.distance = getGeometryDistance(geometry) + getGeometryDistance(alternative);
-                return { geometry, alternative, debug };
-            }
+        if (currentA && currentB && currentA.g + currentB.g >= middleMinimum.g) {
+            const { A, B } = middleMinimum;
+            const geometry = A.geometry();
+            const alternative = B.geometry();
+            // debug.points = geometry.length + alternative.length;
+            debug.distance = getGeometryDistance(geometry) + getGeometryDistance(alternative);
+            // console.log('g', currentA.g + currentB.g, middleMinimum.g);
+            return { geometry, alternative, debug };
         }
 
-        // check finished (but A/B have never met)
+        // check finished (when A/B have never met)
         if (currentA && currentA.ll === finishA.ll) {
             const geometry = currentA.geometry();
             // debug.points = geometry.length;
@@ -115,10 +106,23 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
                 const tentativeG = currentA.g + edge.weight;
                 const ref = openA.find((node) => node.ll === edgeLL);
 
+                if (closedB.has(edgeLL)) {
+                    const opposite = closedB.get(edgeLL);
+                    if (tentativeG + opposite.g < middleMinimum.g) {
+                        meetOccured = true;
+                        const fresh = new Node(edgeLL);
+                        fresh.parent = currentA;
+                        fresh.segment = edge.segment;
+                        middleMinimum.A = fresh;
+                        middleMinimum.B = opposite;
+                        middleMinimum.g = tentativeG + opposite.g;
+                    }
+                }
+
                 debug.totalChecked++;
 
                 if (ref) {
-                    if (tentativeG < ref.g) {
+                    if (tentativeG <= ref.g) {
                         // debug.totalUpdated++;
                         // update shorter
                         ref.g = tentativeG;
@@ -158,10 +162,23 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
                 const tentativeG = currentB.g + edge.weight;
                 const ref = openB.find((node) => node.ll === edgeLL);
 
+                if (closedA.has(edgeLL)) {
+                    const opposite = closedA.get(edgeLL);
+                    if (tentativeG + opposite.g < middleMinimum.g) {
+                        meetOccured = true;
+                        const fresh = new Node(edgeLL);
+                        fresh.parent = currentB;
+                        fresh.segment = edge.segment;
+                        middleMinimum.A = fresh;
+                        middleMinimum.B = opposite;
+                        middleMinimum.g = tentativeG + opposite.g;
+                    }
+                }
+
                 debug.totalChecked++;
 
                 if (ref) {
-                    if (tentativeG < ref.g) {
+                    if (tentativeG <= ref.g) {
                         // debug.totalUpdated++;
                         // update shorter
                         ref.g = tentativeG;
@@ -201,9 +218,6 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
 }
 
 function h(H, nodeA, nodeB) {
-    if (H === null) {
-        return 0;
-    }
     const [latA, lngA] = nodeA.ll.split(',');
     const [latB, lngB] = nodeB.ll.split(',');
     return H(latA, lngA, latB, lngB);
