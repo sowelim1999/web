@@ -13,7 +13,7 @@ import { findStartFinishNodes } from './findStartFinishNodes.mjs';
 const nVertices = (graph) => Object.keys(graph).length;
 const nEdges = (graph) => Object.keys(graph).reduce((a, p) => a + graph[p].length, 0);
 
-export function testRoute({ graph, startPoint, finishPoint, web = false }) {
+export function testRoute({ graph, startPoint, finishPoint, matchArray = [], web = false }) {
     console.log('graph vertices', nVertices(graph), 'edges', nEdges(graph));
 
     let cycle = 0;
@@ -67,6 +67,8 @@ export function testRoute({ graph, startPoint, finishPoint, web = false }) {
 
             ({ geometry, alternative, failedAtStart, failedAtFinish, debug } = measure(f, name, MEASURE));
             console.log(cycle, name, !!geometry, debug.toString());
+            matchArray.length > 0 && checkMatchArray({ debug, matchArray });
+
             uniqueDistances[debug.distance.toFixed(0)] = true;
 
             // route not found
@@ -176,6 +178,37 @@ function makeGeoJSON({ points, alternative, graph, debugOnly = false, uniqueDist
         type: 'FeatureCollection',
         features,
     };
+}
+
+function checkMatchArray({ debug, matchArray }) {
+    const checkfields = {};
+    matchArray.forEach((m) => Object.keys(m).forEach((k) => (checkfields[k] = true)));
+
+    const debugJSON = JSON.stringify(
+        Object.keys(debug)
+            .filter((k) => checkfields[k])
+            .sort()
+            .map((k) => ({ [k]: debug[k] }))
+    );
+
+    const matchArrayJSON = [];
+
+    matchArray.forEach((m) => {
+        matchArrayJSON.push(
+            JSON.stringify(
+                Object.keys(m)
+                    .filter((k) => checkfields[k])
+                    .sort()
+                    .map((k) => ({ [k]: m[k] }))
+            )
+        );
+    });
+
+    if (matchArrayJSON.some((json) => json === debugJSON)) {
+        return true;
+    }
+
+    throw new Error('match failed: ' + debugJSON);
 }
 
 // const RADIUS_START = 100000; // filterGraph radius (m)
