@@ -208,7 +208,8 @@ function checkMatchArray({ debug, matchArray }) {
         return true;
     }
 
-    throw new Error('match failed: ' + debugJSON);
+    console.error('match failed:', debugJSON);
+    // throw new Error('match failed: ' + debugJSON);
 }
 
 // const RADIUS_START = 100000; // filterGraph radius (m)

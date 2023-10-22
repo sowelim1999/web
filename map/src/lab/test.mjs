@@ -7,36 +7,31 @@ import { testRoute, mapToGraph } from './route.mjs';
 // const test = '50.40598,30.61559 50.45771,30.52372'; // Kiev = 11355.59
 // const test = '50.40498,30.61149 50.45971,30.52572'; // Kiev = 10885.33 (A* problem)
 
-// Dijkstra direct 4.9 run per second
-// Dijkstra reverse 9.12 run per second
-// A* direct 10.21 run per second
-// A* reverse 7.12 run per second
-
-const test = [
-    '50.35028,30.61581 50.51517,30.36484', // Kiev = 30361.32 (A* problem)
-    /* http://localhost:3000/map/?start=50.35028,30.61581&finish=50.51517,30.36484&type=osrm&profile=line#12/50.4202/30.5834 */
-    [
-        { uniqueQueued: 73958, maxQueueSize: 80299, totalChecked: 95593, distance: 30361.32 }, // 990 115 145
-        { uniqueQueued: 72302, maxQueueSize: 78459, totalChecked: 93409, distance: 30361.32 }, // 790 220 265
-        { uniqueQueued: 55805, maxQueueSize: 603, totalChecked: 67566, distance: 30361.32 }, // 671 ->
-        { uniqueQueued: 26599, maxQueueSize: 29344, totalChecked: 33596, distance: 30361.32 }, // 980 110 152
-        { uniqueQueued: 37580, maxQueueSize: 41435, totalChecked: 47869, distance: 30361.32 }, // 1330 131 165
-        { uniqueQueued: 25972, maxQueueSize: 994, totalChecked: 31322, distance: 30361.31 }, // 705 ->
-    ],
-];
-
 // const test = [
-//     '50.427987,30.544395 50.470835,30.476761', // Kiev = 8216.18 (A* problem)
-//     /* http://localhost:3000/map/?start=50.427987,30.544395&finish=50.470835,30.476761&type=osrm&profile=line#12/50.4202/30.5834 */
+//     '50.35028,30.61581 50.51517,30.36484', // Kiev = 30361.32 (A* problem)
+//     /* http://localhost:3000/map/?start=50.35028,30.61581&finish=50.51517,30.36484&type=osrm&profile=line#12/50.4202/30.5834 */
 //     [
-//         { maxQueueSize: 484, uniqueQueued: 24019, totalChecked: 28568, distance: 8216.18 },
-//         { maxQueueSize: 481, uniqueQueued: 30340, totalChecked: 36321, distance: 8216.18 },
-//         { maxQueueSize: 370, uniqueQueued: 13822, totalChecked: 16124, distance: 8216.18 },
-//         { maxQueueSize: 299, uniqueQueued: 5472, totalChecked: 6118, distance: 8216.18 },
-//         { maxQueueSize: 297, uniqueQueued: 5980, totalChecked: 6698, distance: 8216.18 },
-//         { maxQueueSize: 373, uniqueQueued: 5407, totalChecked: 6105, distance: 8216.18 },
+//         { uniqueQueued: 73958, maxQueueSize: 80299, totalChecked: 95593, distance: 30361.32 },
+//         { uniqueQueued: 72302, maxQueueSize: 78459, totalChecked: 93409, distance: 30361.32 },
+//         { uniqueQueued: 55810, maxQueueSize: 60393, totalChecked: 71513, distance: 30361.309999999998 },
+//         { uniqueQueued: 26599, maxQueueSize: 29344, totalChecked: 33596, distance: 30361.32 },
+//         { uniqueQueued: 37580, maxQueueSize: 41435, totalChecked: 47869, distance: 30361.32 },
+//         { uniqueQueued: 25799, maxQueueSize: 28243, totalChecked: 32896, distance: 30361.31 },
 //     ],
 // ];
+
+const test = [
+    '50.427987,30.544395 50.470835,30.476761', // Kiev = 8216.18 (A* problem)
+    /* http://localhost:3000/map/?start=50.427987,30.544395&finish=50.470835,30.476761&type=osrm&profile=line#12/50.4202/30.5834 */
+    [
+        { uniqueQueued: 24020, maxQueueSize: 25758, totalChecked: 30015, distance: 8216.18 },
+        { uniqueQueued: 30341, maxQueueSize: 32670, totalChecked: 38329, distance: 8216.18 },
+        { uniqueQueued: 13820, maxQueueSize: 14686, totalChecked: 16832, distance: 8216.17 },
+        { uniqueQueued: 5473, maxQueueSize: 5804, totalChecked: 6333, distance: 8216.18 },
+        { uniqueQueued: 5981, maxQueueSize: 6343, totalChecked: 6948, distance: 8216.18 },
+        { uniqueQueued: 5392, maxQueueSize: 5716, totalChecked: 6332, distance: 8216.18 },
+    ],
+];
 
 // const test = '37.80502,-122.43040 37.80083,-122.41001'; // SF
 // const test = '42.43648,1.47431 42.63151,1.48114'; // Andorra
