@@ -1,5 +1,6 @@
 'use strict';
 
+import FastPriorityQueue from 'fastpriorityqueue';
 import { Node, Debug, getGeometryDistance, getDistanceEuclidean } from './lib.mjs';
 
 /**
@@ -16,209 +17,208 @@ import { Node, Debug, getGeometryDistance, getDistanceEuclidean } from './lib.mj
  * @return { debug } <JSON> debug values and statistics (see lib/class Debug)
  * @return { alternative } <Array> optional alternative geometry for debug purposes
  *
+ * Meet-in-the-middle methods:
+ *
+ * 1) Bi-Dijkstra meet based on Matthew Towers article (University College London)
+ * https://www.homepages.ucl.ac.uk/~ucahmto/math/2020/05/30/bidirectional-dijkstra.html
+ *
+ * 2) Bi-A* meet based on increasing search space by reduction of heuristics influence.
+ * After the meet, `meetHeuristicsFactor` (0.75) is used as reduction factor.
+ * Do not forget to resort openQueue(s) when `meetMin.reorderQueue` true.
+ *
  * Note:
  * ...A variables are related to Forward search (src to dst)
  * ...B variables are related to Backward search (dst to src)
  */
 export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
-    const H = avoidHeuristics ? null : getDistanceEuclidean; // avoidHeuristics = true = Dijkstra
+    // avoidHeuristics = true = Dijkstra
+    const H = avoidHeuristics ? null : getDistanceEuclidean;
 
-    // Bi-A* meet method (increase search space)
-    // reduce heuristics influence after the meet
-    let meetOccured = false;
+    // Bi-Dijkstra meet
+    let meetMin = { g: Infinity, A: null, B: null, meetOccured: false, reorderQueue: false };
+
+    // Bi-A* meet
     const meetHeuristicsFactor = 0.75;
     const sorter = (a, b) =>
-        meetOccured ? a.g + a.h * meetHeuristicsFactor - (b.g + b.h * meetHeuristicsFactor) : a.f - b.f;
-
-    // Bi-Dijkstra meet based on Matthew Towers article (University College London)
-    // https://www.homepages.ucl.ac.uk/~ucahmto/math/2020/05/30/bidirectional-dijkstra.html
-    let middleMinimum = { g: Infinity, A: null, B: null };
+        meetMin.meetOccured ? a.g + a.h * meetHeuristicsFactor < b.g + b.h * meetHeuristicsFactor : a.f < b.f;
 
     const debug = new Debug(); // summarized debug for A+B
 
-    const openA = [];
-    const openB = [];
-    const closedA = new Map();
-    const closedB = new Map();
-    const finishA = new Node(dst);
-    const finishB = new Node(src);
-    openA.push(new Node(src, { g: 0 }));
-    openB.push(new Node(dst, { g: 0 }));
+    const [openQueueA, openMapA, closedMapA, finishA] = initQueues({ src: src, dst: dst, sorter });
+    const [openQueueB, openMapB, closedMapB, finishB] = initQueues({ src: dst, dst: src, sorter });
 
     for (;;) {
-        let currentA = null;
-        let currentB = null;
+        const currentA = fetchCurrent({ openQueue: openQueueA, closedMap: closedMapA });
+        const currentB = fetchCurrent({ openQueue: openQueueB, closedMap: closedMapB });
 
-        // queue out A/B
-        // (tried balancing but failed)
-        // TODO try balancing based on cost
-        const fetchA = openA.length > 0;
-        const fetchB = openB.length > 0;
-        // const fetchA = openA.length > 0 && (openB.length === 0 || openA.length <= openB.length); // failed
-        // const fetchB = openB.length > 0 && (openA.length === 0 || openB.length < openA.length); // failed
-        // const fetchA = openA.length > 0 && debugA.totalChecked <= debugB.totalChecked; // failed
-        // const fetchB(a, b) => a.f - b.fnB.length > 0 && debugB.totalChecked < debugA.totalChecked; // failed
-        if (fetchA) {
-            openA.sort(sorter);
-            currentA = openA.shift();
-            closedA.set(currentA.ll, currentA);
-        }
-        if (fetchB) {
-            openB.sort(sorter);
-            currentB = openB.shift();
-            closedB.set(currentB.ll, currentB);
+        const finish = catchFinish({ currentA, currentB, finishA, finishB, meetMin, debug });
+
+        if (finish) {
+            return finish;
         }
 
-        if (currentA && currentB && currentA.g + currentB.g >= middleMinimum.g) {
-            const { A, B } = middleMinimum;
-            const geometry = A.geometry();
-            const alternative = B.geometry();
-            // debug.points = geometry.length + alternative.length;
-            debug.distance = getGeometryDistance(geometry) + getGeometryDistance(alternative);
-            // console.log('g', currentA.g + currentB.g, middleMinimum.g);
-            return { geometry, alternative, debug };
+        processEdges({
+            graph,
+            current: currentA,
+            openQueue: openQueueA,
+            openMap: openMapA,
+            closedMap: closedMapA,
+            closedOpposite: closedMapB,
+            finish: finishA,
+            meetMin,
+            debug,
+            H,
+        });
+
+        processEdges({
+            graph,
+            current: currentB,
+            openQueue: openQueueB,
+            openMap: openMapB,
+            closedMap: closedMapB,
+            closedOpposite: closedMapA,
+            finish: finishB,
+            meetMin,
+            debug,
+            H,
+        });
+
+        // A* only: reorder after meet (`meetHeuristicsFactor`)
+        if (meetMin.reorderQueue && avoidHeuristics === false) {
+            meetMin.reorderQueue = false;
+            reorderQueue({ queue: openQueueA });
+            reorderQueue({ queue: openQueueB });
         }
 
-        // check finished (when A/B have never met)
-        if (currentA && currentA.ll === finishA.ll) {
-            const geometry = currentA.geometry();
-            // debug.points = geometry.length;
-            debug.distance = getGeometryDistance(geometry);
-            return { geometry, debug };
-        }
-        if (currentB && currentB.ll === finishB.ll) {
-            const geometry = currentB.geometry();
-            // debug.points = geometry.length;
-            debug.distance = getGeometryDistance(geometry);
-            return { geometry, debug };
-        }
+        debug.uniqueQueued = openMapA.size + openMapB.size;
 
-        // A-edges
-        if (currentA) {
-            for (const edge of graph[currentA.ll] || []) {
-                const edgeLL = edge.node;
+        const failed = catchFailed({ openQueueA, openQueueB, debug });
 
-                // already closed - skip
-                if (closedA.has(edgeLL)) {
-                    continue;
-                }
-
-                const tentativeG = currentA.g + edge.weight;
-                const ref = openA.find((node) => node.ll === edgeLL);
-
-                if (closedB.has(edgeLL)) {
-                    const opposite = closedB.get(edgeLL);
-                    if (tentativeG + opposite.g < middleMinimum.g) {
-                        meetOccured = true;
-                        const fresh = new Node(edgeLL);
-                        fresh.parent = currentA;
-                        fresh.segment = edge.segment;
-                        middleMinimum.A = fresh;
-                        middleMinimum.B = opposite;
-                        middleMinimum.g = tentativeG + opposite.g;
-                    }
-                }
-
-                debug.totalChecked++;
-
-                if (ref) {
-                    if (tentativeG <= ref.g) {
-                        // debug.totalUpdated++;
-                        // update shorter
-                        ref.g = tentativeG;
-                        ref.f = ref.g + ref.h;
-                        ref.parent = currentA;
-                        ref.segment = edge.segment;
-                    }
-                } else {
-                    // enqueue
-                    const fresh = new Node(edgeLL);
-                    fresh.g = tentativeG;
-                    fresh.h = H ? h(H, fresh, finishA) : 0;
-                    fresh.f = fresh.g + fresh.h;
-                    fresh.parent = currentA;
-                    fresh.segment = edge.segment;
-                    openA.push(fresh);
-
-                    // debug
-                    edge.debug = true;
-                    debug.uniqueQueued++;
-                    openA.length + openB.length > debug.maxQueueSize &&
-                        (debug.maxQueueSize = openA.length + openB.length);
-                }
-            }
-        }
-
-        // B-edges
-        if (currentB) {
-            for (const edge of graph[currentB.ll] || []) {
-                const edgeLL = edge.node;
-
-                // already closed - skip
-                if (closedB.has(edgeLL)) {
-                    continue;
-                }
-
-                const tentativeG = currentB.g + edge.weight;
-                const ref = openB.find((node) => node.ll === edgeLL);
-
-                if (closedA.has(edgeLL)) {
-                    const opposite = closedA.get(edgeLL);
-                    if (tentativeG + opposite.g < middleMinimum.g) {
-                        meetOccured = true;
-                        const fresh = new Node(edgeLL);
-                        fresh.parent = currentB;
-                        fresh.segment = edge.segment;
-                        middleMinimum.A = fresh;
-                        middleMinimum.B = opposite;
-                        middleMinimum.g = tentativeG + opposite.g;
-                    }
-                }
-
-                debug.totalChecked++;
-
-                if (ref) {
-                    if (tentativeG <= ref.g) {
-                        // debug.totalUpdated++;
-                        // update shorter
-                        ref.g = tentativeG;
-                        ref.f = ref.g + ref.h;
-                        ref.parent = currentB;
-                        ref.segment = edge.segment;
-                    }
-                } else {
-                    // enqueue
-                    const fresh = new Node(edgeLL);
-                    fresh.g = tentativeG;
-                    fresh.h = H ? h(H, fresh, finishB) : 0;
-                    fresh.f = fresh.g + fresh.h;
-                    fresh.parent = currentB;
-                    fresh.segment = edge.segment;
-                    openB.push(fresh);
-
-                    // debug
-                    edge.debug = true;
-                    debug.uniqueQueued++;
-                    openA.length + openB.length > debug.maxQueueSize &&
-                        (debug.maxQueueSize = openA.length + openB.length);
-                }
-            }
-        }
-
-        // finally failed
-        if (openA.length === 0 || openB.length === 0) {
-            return {
-                failedAtStart: openA.length === 0,
-                failedAtFinish: openB.length === 0,
-                geometry: null,
-                debug,
-            };
+        if (failed) {
+            return failed;
         }
     }
 }
 
 function h(H, nodeA, nodeB) {
+    if (H === null) {
+        return 0;
+    }
     const [latA, lngA] = nodeA.ll.split(',');
     const [latB, lngB] = nodeB.ll.split(',');
     return H(latA, lngA, latB, lngB);
+}
+
+function initQueues({ src, dst, sorter }) {
+    const openMap = new Map();
+    const openQueue = new FastPriorityQueue(sorter);
+    const start = new Node(src, { g: 0 });
+    openMap.set(src, start);
+    openQueue.add(start);
+    const closedMap = new Map();
+    const finish = new Node(dst);
+    return [openQueue, openMap, closedMap, finish];
+}
+
+function fetchCurrent({ openQueue, closedMap }) {
+    if (openQueue.size > 0) {
+        const current = openQueue.poll();
+        closedMap.set(current.ll, current);
+        return current;
+    }
+    return null;
+}
+
+function catchFinish({ currentA, currentB, finishA, finishB, meetMin, debug }) {
+    if (currentA && currentB && currentA.g + currentB.g >= meetMin.g) {
+        const { A, B } = meetMin;
+        const geometry = A.geometry();
+        const alternative = B.geometry();
+        // debug.points = geometry.length + alternative.length;
+        debug.distance = getGeometryDistance(geometry) + getGeometryDistance(alternative);
+        // console.log('g', currentA.g + currentB.g, meetMin.g);
+        return { geometry, alternative, debug };
+    }
+
+    // check finish A->B
+    if (currentA && currentA.ll === finishA.ll) {
+        const geometry = currentA.geometry();
+        // debug.points = geometry.length;
+        debug.distance = getGeometryDistance(geometry);
+        return { geometry, debug };
+    }
+
+    // check finish B->A
+    if (currentB && currentB.ll === finishB.ll) {
+        const geometry = currentB.geometry();
+        // debug.points = geometry.length;
+        debug.distance = getGeometryDistance(geometry);
+        return { geometry, debug };
+    }
+
+    return null;
+}
+
+function catchFailed({ openQueueA, openQueueB, debug }) {
+    if (openQueueA.size === 0 || openQueueB.size === 0) {
+        return {
+            failedAtStart: openQueueA.size === 0,
+            failedAtFinish: openQueueB.size === 0,
+            geometry: null,
+            debug,
+        };
+    }
+    return null;
+}
+
+function processEdges({ graph, current, openQueue, openMap, closedMap, closedOpposite, meetMin, finish, debug, H }) {
+    if (current) {
+        for (const edge of graph[current.ll] ?? []) {
+            const edgeLL = edge.node;
+
+            if (closedMap.has(edgeLL)) {
+                continue;
+            }
+
+            debug.totalChecked++; // debug
+
+            const tentativeG = current.g + edge.weight;
+            const ref = openMap.get(edgeLL) ?? new Node(edgeLL);
+
+            // better candidate
+            if (tentativeG < ref.g) {
+                ref.h = ref.h || h(H, ref, finish); // reuse if possible
+                ref.g = tentativeG;
+                ref.f = ref.g + ref.h;
+                ref.parent = current;
+                ref.segment = edge.segment;
+                openMap.set(edgeLL, ref);
+                openQueue.add(ref);
+
+                // debug
+                edge.debug = true;
+                debug.maxQueueSize++;
+            }
+
+            // prepare meet point
+            if (closedOpposite.has(edgeLL)) {
+                const opposite = closedOpposite.get(edgeLL);
+                if (tentativeG + opposite.g < meetMin.g) {
+                    if (meetMin.meetOccured === false) {
+                        meetMin.reorderQueue = true;
+                        meetMin.meetOccured = true;
+                    }
+                    meetMin.A = ref;
+                    meetMin.B = opposite;
+                    meetMin.g = tentativeG + opposite.g;
+                }
+            }
+        }
+    }
+}
+
+function reorderQueue({ queue }) {
+    const refresh = [];
+    queue.forEach((q) => refresh.push(q));
+    queue.heapify(refresh); // replace and resort queue
 }
