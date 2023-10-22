@@ -1,5 +1,6 @@
 'use strict';
 
+import FastPriorityQueue from 'fastpriorityqueue'; // 20% faster than @datastructures-js/priority-queue
 import { Node, Debug, getGeometryDistance, getDistanceEuclidean, getDistance } from './lib.mjs';
 
 const FAST_HEURISTIRCS = true;
@@ -10,27 +11,23 @@ export function aStar({ graph, src, dst, avoidHeuristics = false }) {
     let H = FAST_HEURISTIRCS ? getDistanceEuclidean : getDistance;
     avoidHeuristics && (H = null); // A* without heuristics is just a Dijkstra (limited by finish-node)
 
-    const openNodes = [];
-    const closedNodes = new Set();
+    const openMap = new Map(); // 150x faster than openNodes.find on ~900 max queue / ~30 km route
+    const openQueue = new FastPriorityQueue((a, b) => a.f < b.f);
+    const closedSet = new Set();
 
-    const start = new Node(src);
+    const start = new Node(src, { g: 0 });
     const finish = new Node(dst);
+    openMap.set(src, start);
+    openQueue.add(start);
 
-    start.g = 0;
-    start.segment = null;
-    openNodes.push(start);
-
-    while (openNodes.length > 0) {
-        // sort() as priority queue
-        openNodes.sort((a, b) => a.f - b.f);
-
-        // shift node with the shortest path and save it as closed
-        const current = openNodes.shift();
+    while (openQueue.size > 0) {
+        const current = openQueue.poll();
 
         // add to closed nodes
-        closedNodes.add(current.ll);
+        closedSet.add(current.ll);
+        // openMap.delete(current.ll); // no need
 
-        // finally, got the route
+        // success
         if (current.ll === dst) {
             const geometry = current.geometry();
             debug.distance = getGeometryDistance(geometry);
@@ -41,40 +38,27 @@ export function aStar({ graph, src, dst, avoidHeuristics = false }) {
         for (const edge of graph[current.ll] || []) {
             const edgeLL = edge.node;
 
-            // already closed - skip
-            if (closedNodes.has(edgeLL)) {
+            if (closedSet.has(edgeLL)) {
                 continue;
             }
 
-            const tentativeG = current.g + edge.weight;
-            const ref = openNodes.find((node) => node.ll === edgeLL);
-
             debug.totalChecked++; // debug
+            const tentativeG = current.g + edge.weight;
+            const ref = openMap.get(edgeLL) ?? new Node(edgeLL);
 
-            if (ref) {
-                if (tentativeG < ref.g) {
-                    // update shorter
-                    ref.g = tentativeG;
-                    ref.f = ref.g + ref.h;
-                    ref.parent = current;
-                    ref.segment = edge.segment;
-
-                    // debug.totalUpdated++; // debug
-                }
-            } else {
-                // enqueue
-                const fresh = new Node(edgeLL);
-                fresh.g = tentativeG;
-                fresh.h = h(H, fresh, finish);
-                fresh.f = fresh.g + fresh.h;
-                fresh.parent = current;
-                fresh.segment = edge.segment;
-                openNodes.push(fresh);
+            if (tentativeG < ref.g) {
+                ref.h = ref.h || h(H, ref, finish); // reuse if possible
+                ref.g = tentativeG;
+                ref.f = ref.g + ref.h;
+                ref.parent = current;
+                ref.segment = edge.segment;
+                openMap.set(edgeLL, ref);
+                openQueue.add(ref);
 
                 // debug
                 edge.debug = true;
-                debug.uniqueQueued++;
-                openNodes.length > debug.maxQueueSize && (debug.maxQueueSize = openNodes.length);
+                debug.maxQueueSize++;
+                debug.uniqueQueued = openMap.size;
             }
         }
     }
@@ -90,29 +74,3 @@ function h(H, nodeA, nodeB) {
     const [latB, lngB] = nodeB.ll.split(',');
     return H(latA, lngA, latB, lngB);
 }
-
-// /**
-//  * Performance notes:
-//  * 1) sort() + shift: OK (default)
-//  * 2) min-find + closedNodes.has() + no-remove: slow (8x worst)
-//  *
-//  * TODO: try min-find with openNodes slice
-//  * TODO: try openNodes as Set/Map hash object
-//  * TODO: try priority queue: https://github.com/mourner/tinyqueue
-//  */
-// // (1) default sort() as priority queue
-// openNodes.sort((a, b) => a.f - b.f);
-
-// // (2) slow...
-// // let min = Infinity;
-// // let current = null;
-// // openNodes.forEach((n) => {
-// //     if (n.toEnd < min && !closedNodes.has(n.ll)) {
-// //         current = n;
-// //         min = n.toEnd;
-// //     }
-// // });
-
-// // shift node with the shortest path and save it as closed
-// const current = openNodes.shift();
-// closedNodes.add(current.ll);
