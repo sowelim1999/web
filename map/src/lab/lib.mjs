@@ -27,8 +27,8 @@ export class Node {
 export class Debug {
     constructor() {
         this.started = Date.now();
-        this.maxQueueSize = 0;
         this.uniqueQueued = 0;
+        this.maxQueueSize = 0;
         this.totalChecked = 0;
         // this.totalUpdated = 0;
         // this.points = 0;

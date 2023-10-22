@@ -6,20 +6,28 @@ import { testRoute, mapToGraph } from './route.mjs';
 // const test = '50.40498,30.61149 50.42361,30.47127'; // Kiev = 13324.33
 // const test = '50.40598,30.61559 50.45771,30.52372'; // Kiev = 11355.59
 // const test = '50.40498,30.61149 50.45971,30.52572'; // Kiev = 10885.33 (A* problem)
+
+// Dijkstra direct 4.9 run per second
+// Dijkstra reverse 9.12 run per second
+// A* direct 10.21 run per second
+// A* reverse 7.12 run per second
+
 const test = [
     '50.35028,30.61581 50.51517,30.36484', // Kiev = 30361.32 (A* problem)
+    /* http://localhost:3000/map/?start=50.35028,30.61581&finish=50.51517,30.36484&type=osrm&profile=line#12/50.4202/30.5834 */
     [
-        { maxQueueSize: 385, uniqueQueued: 73957, totalChecked: 90113, distance: 30361.32 },
-        { maxQueueSize: 372, uniqueQueued: 72301, totalChecked: 88179, distance: 30361.32 },
-        { maxQueueSize: 603, uniqueQueued: 55805, totalChecked: 67566, distance: 30361.32 },
-        { maxQueueSize: 822, uniqueQueued: 26598, totalChecked: 31776, distance: 30361.32 },
-        { maxQueueSize: 931, uniqueQueued: 37579, totalChecked: 45299, distance: 30361.32 },
-        { maxQueueSize: 994, uniqueQueued: 25972, totalChecked: 31322, distance: 30361.31 },
+        { uniqueQueued: 73958, maxQueueSize: 80299, totalChecked: 95593, distance: 30361.32 }, // 990 115 145
+        { uniqueQueued: 72302, maxQueueSize: 78459, totalChecked: 93409, distance: 30361.32 }, // 790 220 265
+        { uniqueQueued: 55805, maxQueueSize: 603, totalChecked: 67566, distance: 30361.32 }, // 671 ->
+        { uniqueQueued: 26599, maxQueueSize: 29344, totalChecked: 33596, distance: 30361.32 }, // 980 110 152
+        { uniqueQueued: 37580, maxQueueSize: 41435, totalChecked: 47869, distance: 30361.32 }, // 1330 131 165
+        { uniqueQueued: 25972, maxQueueSize: 994, totalChecked: 31322, distance: 30361.31 }, // 705 ->
     ],
 ];
 
 // const test = [
 //     '50.427987,30.544395 50.470835,30.476761', // Kiev = 8216.18 (A* problem)
+//     /* http://localhost:3000/map/?start=50.427987,30.544395&finish=50.470835,30.476761&type=osrm&profile=line#12/50.4202/30.5834 */
 //     [
 //         { maxQueueSize: 484, uniqueQueued: 24019, totalChecked: 28568, distance: 8216.18 },
 //         { maxQueueSize: 481, uniqueQueued: 30340, totalChecked: 36321, distance: 8216.18 },
