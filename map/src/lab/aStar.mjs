@@ -5,11 +5,11 @@ import { Node, Debug, getGeometryDistance, getDistanceEuclidean, getDistance } f
 
 const FAST_HEURISTIRCS = true;
 
-export function aStar({ graph, src, dst, avoidHeuristics = false }) {
+export function aStar({ graph, src, dst, dijkstra = false }) {
     const debug = new Debug();
 
     let H = FAST_HEURISTIRCS ? getDistanceEuclidean : getDistance;
-    avoidHeuristics && (H = null); // A* without heuristics is just a Dijkstra (limited by finish-node)
+    dijkstra && (H = null); // A* without heuristics is just a Dijkstra (limited by finish-node)
 
     const openMap = new Map(); // 150x faster than openNodes.find on ~900 max queue / ~30 km route
     const openQueue = new FastPriorityQueue((a, b) => a.f < b.f);

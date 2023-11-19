@@ -37,16 +37,16 @@ export function testRoute({ graph, startPoint, finishPoint, matchArray = [], web
         const ROUTERS = [
             {
                 name: 'Dijkstra direct',
-                f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
+                f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL, dijkstra: true }),
             },
             {
                 name: 'Dijkstra reverse',
                 reversed: true,
-                f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL, avoidHeuristics: true }),
+                f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL, dijkstra: true }),
             },
             {
                 name: 'Dijkstra Two-Way',
-                f: () => aStarBi({ graph, src: startNodeLL, dst: finishNodeLL, avoidHeuristics: true }),
+                f: () => aStarBi({ graph, src: startNodeLL, dst: finishNodeLL, dijkstra: true }),
             },
             { name: 'A* direct', f: () => aStar({ graph, src: startNodeLL, dst: finishNodeLL }) },
             { name: 'A* reverse', reversed: true, f: () => aStar({ graph, src: finishNodeLL, dst: startNodeLL }) },

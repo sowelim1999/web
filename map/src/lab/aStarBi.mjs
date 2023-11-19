@@ -8,7 +8,7 @@ import { Node, Debug, getGeometryDistance, getDistanceEuclidean } from './lib.mj
  *
  * @param graph <Object> Undirected Weighted Graph from featuresToWeightedGraph()
  * @param src, dst <String> Start/Finish nodes in LL format: "lat,lng"
- * @param avoidHeuristics <Bool> when true, BA* acts as BI-Dijkstra
+ * @param dijkstra <Bool> when true, BA* acts as BI-Dijkstra
  *
  * @return { failedAtStart } <Bool> route failed because start is deadlocked
  * @return { failedAtFinish } <Bool> route failed because finish is deadlocked
@@ -30,9 +30,8 @@ import { Node, Debug, getGeometryDistance, getDistanceEuclidean } from './lib.mj
  * ...A variables are related to Forward search (src to dst)
  * ...B variables are related to Backward search (dst to src)
  */
-export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
-    // avoidHeuristics = true = Dijkstra
-    const H = avoidHeuristics ? null : getDistanceEuclidean;
+export function aStarBi({ graph, src, dst, dijkstra = false }) {
+    const H = dijkstra ? null : getDistanceEuclidean;
 
     // Bi-Dijkstra meet
     let meetMin = { g: Infinity, A: null, B: null, meetOccured: false, reorderQueue: false };
@@ -84,7 +83,7 @@ export function aStarBi({ graph, src, dst, avoidHeuristics = false }) {
         });
 
         // A* only: reorder after meet (`meetHeuristicsFactor`)
-        if (meetMin.reorderQueue && avoidHeuristics === false) {
+        if (meetMin.reorderQueue && dijkstra === false) {
             meetMin.reorderQueue = false;
             reorderQueue({ queue: openQueueA });
             reorderQueue({ queue: openQueueB });
