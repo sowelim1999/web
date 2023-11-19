@@ -29,7 +29,7 @@ const test = [
         { uniqueQueued: 13820, maxQueueSize: 14686, totalChecked: 16832, distance: 8216.17 },
         { uniqueQueued: 5473, maxQueueSize: 5804, totalChecked: 6333, distance: 8216.18 },
         { uniqueQueued: 5981, maxQueueSize: 6343, totalChecked: 6948, distance: 8216.18 },
-        { uniqueQueued: 5392, maxQueueSize: 5716, totalChecked: 6332, distance: 8216.18 },
+        { uniqueQueued: 5572, maxQueueSize: 5906, totalChecked: 6539, distance: 8216.18 },
     ],
 ];
 
