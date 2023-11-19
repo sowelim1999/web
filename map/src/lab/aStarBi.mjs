@@ -50,6 +50,7 @@ export function aStarBi({ graph, src, dst, dijkstra = false }) {
         const currentA = fetchCurrent({ openQueue: openQueueA, closedMap: closedMapA });
         const currentB = fetchCurrent({ openQueue: openQueueB, closedMap: closedMapB });
 
+        // It is possible to catchFinish() after processEdges() but it will take +1 cycle
         const finish = catchFinish({ currentA, currentB, finishA, finishB, meetMin, debug });
 
         if (finish) {
